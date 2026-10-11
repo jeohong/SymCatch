@@ -15,7 +15,7 @@ import Domain
 ///
 /// 모든 심볼의 윤곽선과 거리 지도를 메모리에 만들어 둔다(파일로 저장하지 않음).
 /// 처음 검색할 때 또는 `prepare()`를 부를 때 만들며, 심볼 8,000개 기준 수십 초가 걸릴 수 있다.
-public actor ChamferSymbolSearch: SymbolSearching {
+public actor ChamferSymbolSearch: SymbolSearching, SymbolScoring {
     public nonisolated let engineID: String
 
     private let catalog: any SymbolCatalogRepository

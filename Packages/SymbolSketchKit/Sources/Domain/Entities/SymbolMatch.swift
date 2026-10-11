@@ -37,10 +37,13 @@ public struct ScoredSymbol: Sendable, Hashable {
     public let family: String
     /// 코사인 유사도 등 엔진 고유의 점수. 클수록 비슷하다.
     public let score: Double
+    /// 심볼 모양 복잡도(0...1). 엔진이 알 때만(단순 심볼 뱃지 제외 기준을 정할 때 쓴다).
+    public let complexity: Double?
 
-    public init(name: String, family: String, score: Double) {
+    public init(name: String, family: String, score: Double, complexity: Double? = nil) {
         self.name = name
         self.family = family
         self.score = score
+        self.complexity = complexity
     }
 }

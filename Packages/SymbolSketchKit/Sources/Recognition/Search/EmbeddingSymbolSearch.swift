@@ -14,7 +14,7 @@ public enum SymbolSearchError: Error, Sendable, Equatable {
 }
 
 /// 방식 B·C·D의 검색: 그림 → 벡터 → 모든 심볼과 코사인 유사도 → 변형 묶기 → 0~100% 보정.
-public actor EmbeddingSymbolSearch: SymbolSearching {
+public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
     private let pipeline: EmbeddingPipeline
     private let store: SymbolIndexStore
     private let calibrator: ScoreCalibrator
@@ -48,8 +48,9 @@ public actor EmbeddingSymbolSearch: SymbolSearching {
         // Vision은 스레드를 오래 붙잡으므로 GCD 스레드에서 돌린다(BlockingWork 참고).
         guard let query = try await BlockingWork.run({ try pipeline.embed(sketch) }) else { return [] }
         let scores = loaded.engine.scores(for: query)
-        return zip(loaded.index.names, zip(loaded.families, scores)).map { name, pair in
-            ScoredSymbol(name: name, family: pair.0, score: Double(pair.1))
+        return loaded.index.names.indices.map { index in
+            ScoredSymbol(name: loaded.index.names[index], family: loaded.families[index], score: Double(scores[index]),
+                         complexity: Double(loaded.index.complexity[index]))
         }
     }
 

@@ -15,3 +15,9 @@ public protocol SymbolSearching: Sendable {
     /// - Returns: 변형을 묶은 뒤 유사도 내림차순 상위 `limit`개.
     func search(sketch: Sketch, limit: Int) async throws -> [SymbolMatch]
 }
+
+/// 묶기·보정 전 원시 점수(모든 심볼). 개발용 평가·보정값 계산에 쓴다.
+public protocol SymbolScoring: Sendable {
+    var engineID: String { get }
+    func rawScores(for sketch: Sketch) async throws -> [ScoredSymbol]
+}
