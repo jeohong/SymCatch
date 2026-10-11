@@ -124,9 +124,15 @@ public struct DefaultFetchCollectionUseCase: FetchCollectionUseCase {
         let representatives = Dictionary(grouping: symbols, by: \.family).values.compactMap { members in
             members.min { fillCount($0.name) != fillCount($1.name) ? fillCount($0.name) < fillCount($1.name) : $0.name < $1.name }
         }
-        let byCategory = categories.map { category in
+        var byCategory = categories.map { category in
             CategorySymbols(category: category, names: representatives.filter { $0.categories.contains(category.key) }.map(\.name).sorted())
         }.filter { !$0.names.isEmpty }
+        // 카테고리가 없는 심볼도 분모에 들어가므로 격자 끝 "기타"에 모은다.
+        let knownKeys = Set(categories.map(\.key))
+        let uncategorized = representatives.filter { Set($0.categories).isDisjoint(with: knownKeys) }.map(\.name).sorted()
+        if !uncategorized.isEmpty {
+            byCategory.append(CategorySymbols(category: SymbolCategory.uncategorized, names: uncategorized))
+        }
 
         let stored = try await achievements.all()
         let storedByID = Dictionary(stored.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -141,4 +147,9 @@ public struct DefaultFetchCollectionUseCase: FetchCollectionUseCase {
     private func fillCount(_ name: String) -> Int {
         name.split(separator: ".").filter { $0 == "fill" }.count
     }
+}
+
+extension SymbolCategory {
+    /// 카테고리가 없는 심볼을 모으는 콜렉션 전용 묶음
+    public static let uncategorized = SymbolCategory(key: "uncategorized", label: "Other", icon: "square.grid.2x2")
 }
