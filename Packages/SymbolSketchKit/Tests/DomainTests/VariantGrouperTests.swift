@@ -24,16 +24,26 @@ struct VariantGrouperTests {
         #expect(VariantGrouper.family(of: name) == expected)
     }
 
-    @Test func 같은_family는_하나로_묶고_최고점_변형이_대표가_된다() {
+    @Test func 같은_family는_하나로_묶고_기본_모양이_대표가_된다() {
         let groups = VariantGrouper.group([
             scored("heart", 0.80),
             scored("heart.fill", 0.90),
             scored("star", 0.70),
         ], limit: 10)
 
-        #expect(groups.map(\.representative.name) == ["heart.fill", "star"])
-        #expect(groups[0].variants == ["heart"])
+        #expect(groups.map(\.representative.name) == ["heart", "star"])
+        #expect(groups[0].variants == ["heart.fill"])
+        // 묶음 점수는 변형 중 최고점(대표를 기본 모양으로 바꿔도 점수가 깎이지 않는다)
+        #expect(groups[0].score == 0.90)
         #expect(groups[1].variants.isEmpty)
+    }
+
+    @Test func 기본_모양이_없으면_fill이_적은_변형이_대표() {
+        let groups = VariantGrouper.group([
+            scored("square.fill.on.square.fill", 0.9),
+            scored("square.on.square.fill", 0.5),
+        ], limit: 10)
+        #expect(groups.first?.representative.name == "square.on.square.fill")
     }
 
     @Test func 묶은_뒤에_상위_limit개를_자른다() {
@@ -43,7 +53,8 @@ struct VariantGrouperTests {
             scored("c", 0.7),
         ], limit: 2)
 
-        #expect(groups.map(\.representative.name) == ["a.fill", "b"])
+        #expect(groups.map(\.representative.name) == ["a", "b"])
+        #expect(groups.map(\.score) == [0.95, 0.8])
     }
 
     @Test func 점수가_같으면_이름순으로_순서를_고정한다() {
