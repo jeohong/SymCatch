@@ -265,7 +265,7 @@ private struct PreviewCollection: FetchCollectionUseCase {
             badges: badges,
             achievements: [Achievement(id: .firstStroke, progress: 1, unlockedAt: .now), Achievement(id: .sharpshooter, progress: 1, unlockedAt: .now),
                            Achievement(id: .collector10, progress: 2)],
-            totalSymbolCount: 5_145,
+            totalSymbolCount: 1_234,  // 미리보기 예시 값(실제 값은 기기 OS에 따라 계산)
             categories: [
                 CategorySymbols(category: SymbolCategory(key: "weather", label: "Weather", icon: "cloud"),
                                 names: ["cloud", "cloud.sun", "sun.max", "moon", "snowflake", "wind", "bolt", "drop"]),
