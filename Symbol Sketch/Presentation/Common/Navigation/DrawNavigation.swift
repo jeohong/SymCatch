@@ -43,3 +43,18 @@ protocol RecentNavigating: AnyObject {
     /// 빈 상태의 "그리러 가기"
     func showDrawTab()
 }
+
+enum CollectionRoute: Hashable {
+    case badgeDetail(symbolName: String)
+    case symbolDetail(SymbolDetailRequest)
+}
+
+/// 콜렉션(S6)·뱃지 상세(S7)가 화면 이동 의도를 알리는 통로
+@MainActor
+protocol CollectionNavigating: AnyObject {
+    func showBadgeDetail(symbolName: String)
+    func showCollectionSymbolDetail(_ request: SymbolDetailRequest)
+    /// "더 높은 등급에 도전" / "그려서 도전하기": 그리기 탭으로 가서 목표 카드를 띄운다.
+    func startChallenge(symbolName: String)
+    func showDrawTab()
+}

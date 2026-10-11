@@ -14,6 +14,7 @@ struct RootTabView: View {
     @State private var router: AppRouter
     @State private var drawViewModel: DrawViewModel
     @State private var recentViewModel: RecentViewModel
+    @State private var collectionViewModel: CollectionViewModel
 
     init(container: AppContainer) {
         self.container = container
@@ -21,6 +22,7 @@ struct RootTabView: View {
         _router = State(initialValue: router)
         _drawViewModel = State(initialValue: container.makeDrawViewModel(navigator: router))
         _recentViewModel = State(initialValue: container.makeRecentViewModel(navigator: router))
+        _collectionViewModel = State(initialValue: container.makeCollectionViewModel(navigator: router))
     }
 
     var body: some View {
@@ -53,8 +55,27 @@ struct RootTabView: View {
             .tabItem { Label("최근", systemImage: "clock.arrow.circlepath") }
             .tag(AppTab.recent)
 
-            NavigationStack {
-                CollectionPlaceholder(container: container)
+            NavigationStack(path: $router.collectionPath) {
+                CollectionScreen(viewModel: collectionViewModel)
+                    #if DEBUG
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            NavigationLink {
+                                DeveloperMenu(container: container)
+                            } label: {
+                                Label("개발 도구", systemImage: "hammer")
+                            }
+                        }
+                    }
+                    #endif
+                    .navigationDestination(for: CollectionRoute.self) { route in
+                        switch route {
+                        case .badgeDetail(let name):
+                            BadgeDetailScreen(viewModel: container.makeBadgeDetailViewModel(symbolName: name, navigator: router))
+                        case .symbolDetail(let request):
+                            SymbolDetailScreen(viewModel: container.makeSymbolDetailViewModel(request: request))
+                        }
+                    }
             }
             .tabItem { Label("콜렉션", systemImage: "rosette") }
             .tag(AppTab.collection)
@@ -70,27 +91,12 @@ struct RootTabView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: router.celebration)
-    }
-}
-
-/// M2에서 콜렉션 화면으로 바뀐다. 지금은 개발 도구로 가는 입구만 둔다(DEBUG).
-private struct CollectionPlaceholder: View {
-    let container: AppContainer
-
-    var body: some View {
-        EmptyStateView(systemImage: "rosette", message: String(localized: "콜렉션은 다음 단계(M2)에서 만들어요"))
-            .navigationTitle("콜렉션")
-            #if DEBUG
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        DeveloperMenu(container: container)
-                    } label: {
-                        Label("개발 도구", systemImage: "hammer")
-                    }
-                }
-            }
-            #endif
+        .onChange(of: router.pendingChallenge) { _, name in
+            // 콜렉션의 "도전하기" → 그리기 화면에 목표를 넘긴다.
+            guard let name else { return }
+            drawViewModel.startChallenge(symbolName: name)
+            router.pendingChallenge = nil
+        }
     }
 }
 

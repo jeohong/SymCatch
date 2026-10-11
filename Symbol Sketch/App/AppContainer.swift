@@ -55,7 +55,8 @@ final class AppContainer {
         }
         let support = URL.applicationSupportDirectory
         return AppContainer(
-            symbolCatalog: BundledSymbolCatalogRepository(fileURL: catalogURL),
+            // 번들 목록은 최신 SF Symbols 기준이라, 이 기기 OS에 없는 심볼은 걸러서 쓴다.
+            symbolCatalog: AvailableSymbolCatalog(base: BundledSymbolCatalogRepository(fileURL: catalogURL), os: currentOS),
             evaluationSamples: FileEvaluationSampleRepository(directory: support.appending(path: "EvaluationSamples")),
             indexDirectory: support.appending(path: "SymbolIndex"),
             progressContainer: makeProgressContainer(url: support.appending(path: "Progress.store"))
@@ -79,6 +80,11 @@ final class AppContainer {
                 fatalError("기록 저장소를 만들지 못했습니다: \(error)")
             }
         }
+    }
+
+    private static var currentOS: OSVersion {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return OSVersion(major: version.majorVersion, minor: version.minorVersion)
     }
 
     /// UI 테스트 실행 인자: 기록을 메모리에만 저장
@@ -116,6 +122,17 @@ final class AppContainer {
             fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
             navigator: navigator
         )
+    }
+
+    func makeCollectionViewModel(navigator: any CollectionNavigating) -> CollectionViewModel {
+        CollectionViewModel(
+            fetchCollection: DefaultFetchCollectionUseCase(badges: badges, achievements: achievements, catalog: symbolCatalog),
+            navigator: navigator
+        )
+    }
+
+    func makeBadgeDetailViewModel(symbolName: String, navigator: any CollectionNavigating) -> BadgeDetailViewModel {
+        BadgeDetailViewModel(symbolName: symbolName, fetchBadges: DefaultFetchBadgesUseCase(badges: badges), navigator: navigator)
     }
 
     func makeCelebrationViewModel(celebration: Celebration, onFinish: @escaping () -> Void) -> CelebrationViewModel {

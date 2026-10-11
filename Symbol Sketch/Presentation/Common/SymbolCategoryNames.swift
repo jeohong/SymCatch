@@ -39,6 +39,7 @@ enum SymbolCategoryNames {
         case "arrows": String(localized: "화살표")
         case "indices": String(localized: "번호")
         case "math": String(localized: "수학")
+        case SymbolCategory.uncategorized.key: String(localized: "기타")
         default: category.label
         }
     }
