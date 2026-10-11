@@ -91,3 +91,40 @@ struct HistoryRetentionPolicyTests {
         #expect(HistoryRetentionPolicy.overflow(records).isEmpty)
     }
 }
+
+struct RecentGroupingPolicyTests {
+    /// 일요일 시작 달력(한국 기본). 기준일 2026-10-11(일) 12:00 UTC → 이번 주는 10/11~10/17
+    private var calendar: Calendar {
+        var calendar = Fixtures.utcCalendar
+        calendar.firstWeekday = 1
+        return calendar
+    }
+
+    @Test func 오늘과_어제() {
+        let now = Fixtures.date(days: 3)                                  // 10/14(수)
+        #expect(RecentGroupingPolicy.group(of: Fixtures.date(days: 3, hours: -11), now: now, calendar: calendar) == .today)
+        #expect(RecentGroupingPolicy.group(of: Fixtures.date(days: 2), now: now, calendar: calendar) == .yesterday)
+    }
+
+    @Test func 같은_달력_주면_이번_주_아니면_이전() {
+        let now = Fixtures.date(days: 3)                                  // 10/14(수)
+        #expect(RecentGroupingPolicy.group(of: Fixtures.date(), now: now, calendar: calendar) == .thisWeek)       // 10/11(일)
+        #expect(RecentGroupingPolicy.group(of: Fixtures.date(days: -1), now: now, calendar: calendar) == .earlier) // 10/10(토)
+    }
+
+    @Test func 일요일의_어제는_지난_주여도_어제() {
+        let sunday = Fixtures.date()
+        #expect(RecentGroupingPolicy.group(of: Fixtures.date(days: -1), now: sunday, calendar: calendar) == .yesterday)
+        #expect(RecentGroupingPolicy.group(of: Fixtures.date(days: -2), now: sunday, calendar: calendar) == .earlier)
+    }
+
+    @Test func 묶음은_고정_순서이고_빈_묶음은_빠진다() {
+        let now = Fixtures.date(days: 3)
+        let records = [Fixtures.date(days: -5), Fixtures.date(days: 3), Fixtures.date(days: 3, hours: -1)].enumerated().map {
+            FoundRecord(symbolName: "s\($0.offset)", sketch: Fixtures.sketch, similarity: 50, foundAt: $0.element)
+        }
+        let grouped = RecentGroupingPolicy.grouped(records, now: now, calendar: calendar)
+        #expect(grouped.map(\.group) == [.today, .earlier])
+        #expect(grouped[0].records.map(\.symbolName) == ["s1", "s2"])
+    }
+}
