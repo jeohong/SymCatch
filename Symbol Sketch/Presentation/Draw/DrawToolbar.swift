@@ -1,0 +1,113 @@
+//
+//  DrawToolbar.swift
+//  Symbol Sketch
+//
+//  Created by Hongjeongmin on 10/11/26.
+//
+
+import SwiftUI
+
+/// 캔버스 아래 도구 바: 되돌리기 · 다시 하기 · 지우개 · 전체 지우기 + 찾기 버튼(DESIGN_NOTES 3.2).
+struct DrawToolbar: View {
+    let canvas: SketchCanvasController
+    let phase: DrawViewModel.Phase
+    let canSearch: Bool
+    let onSearch: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.m) {
+            HStack(spacing: 0) {
+                ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", isEnabled: canvas.canUndo) { canvas.undo() }
+                ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", isEnabled: canvas.canRedo) { canvas.redo() }
+                ToolButton(title: "지우개", systemImage: "eraser", isOn: canvas.tool == .eraser) { canvas.toggleTool() }
+                ToolButton(title: "전체 지우기", systemImage: "trash", isEnabled: !canvas.isEmpty) { canvas.clear() }
+            }
+            .padding(Spacing.xxs)
+            .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
+
+            Spacer(minLength: 0)
+
+            FindButton(phase: phase, isEnabled: canSearch, action: onSearch)
+        }
+    }
+}
+
+private struct ToolButton: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    var isEnabled = true
+    var isOn = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .foregroundStyle(isOn ? DSColor.bgPrimary : DSColor.textPrimary)
+                .frame(width: Metrics.toolButton, height: Metrics.toolButton)
+                .background(isOn ? DSColor.textPrimary : .clear, in: RoundedRectangle(cornerRadius: Radius.button))
+                .opacity(isEnabled ? 1 : 0.3)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+        .animation(.easeOut(duration: 0.15), value: isOn)
+    }
+}
+
+/// 찾기 버튼: 찾기 / 곧 찾아요(0.6초 채움) / 찾는 중 / 비활성
+private struct FindButton: View {
+    let phase: DrawViewModel.Phase
+    let isEnabled: Bool
+    let action: () -> Void
+
+    @State private var pendingFill: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.s - 1) {
+                if case .searching = phase {
+                    ProgressView().tint(DSColor.onAccent)
+                } else {
+                    Image(systemName: "magnifyingglass")
+                }
+                Text(title)
+            }
+            .font(.headline)
+            .padding(.leading, Spacing.l)
+            .padding(.trailing, Spacing.l + Spacing.xs)
+            .frame(minWidth: 104, minHeight: Metrics.primaryButtonHeight)
+            .foregroundStyle(isEnabled ? DSColor.onAccent : DSColor.textSecondary)
+            .background(alignment: .leading) {
+                ZStack(alignment: .leading) {
+                    isEnabled ? DSColor.accent : DSColor.bgTertiary
+                    if phase == .waiting {
+                        GeometryReader { proxy in
+                            DSColor.pending.frame(width: proxy.size.width * pendingFill)
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: Radius.toolGroup))
+            }
+            .shadow(color: isEnabled ? DSColor.accent.opacity(0.3) : .clear, radius: 8, y: 6)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .onChange(of: phase) { _, newPhase in
+            guard newPhase == .waiting else { return }
+            pendingFill = 0
+            guard !reduceMotion else { return }
+            withAnimation(.linear(duration: 0.6)) { pendingFill = 1 }
+        }
+    }
+
+    private var title: LocalizedStringKey {
+        switch phase {
+        case .waiting: "곧 찾아요"
+        case .searching: "찾는 중"
+        default: "찾기"
+        }
+    }
+}

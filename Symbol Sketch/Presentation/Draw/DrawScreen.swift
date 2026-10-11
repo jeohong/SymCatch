@@ -1,0 +1,60 @@
+//
+//  DrawScreen.swift
+//  Symbol Sketch
+//
+//  Created by Hongjeongmin on 10/11/26.
+//
+
+import SwiftUI
+import Domain
+
+/// 그리기 화면(S1) + 결과 시트(S2). M1은 iPhone(compact) 배치만 만든다.
+/// iPad·iPhone Duo 배치는 M4·M4.5에서 `DrawLayoutResolver`로 나눈다.
+struct DrawScreen: View {
+    @Bindable var viewModel: DrawViewModel
+    @State private var canvas = SketchCanvasController()
+
+    /// 캔버스 아래 도구 바 높이
+    private let toolbarHeight: CGFloat = 58
+    /// 접힌 결과 시트가 최소한 차지할 높이(Top 3 카드가 보이도록)
+    private let minimumSheetHeight: CGFloat = 200
+
+    var body: some View {
+        GeometryReader { proxy in
+            let canvasSide = max(160, min(proxy.size.width - Spacing.screen * 2,
+                                          proxy.size.height - Spacing.s - toolbarHeight - minimumSheetHeight))
+            let collapsedSheetTop = Spacing.s + canvasSide + toolbarHeight
+
+            ZStack(alignment: .top) {
+                VStack(spacing: 0) {
+                    DrawCanvasArea(
+                        controller: canvas,
+                        isEmpty: viewModel.sketch.isEmpty,
+                        isTooSmall: viewModel.phase == .tooSmall,
+                        onChange: { viewModel.sketchDidChange($0) }
+                    )
+                    .frame(width: canvasSide, height: canvasSide)
+                    .padding(.top, Spacing.s)
+
+                    DrawToolbar(canvas: canvas, phase: viewModel.phase, canSearch: viewModel.canSearch) {
+                        viewModel.searchNow()
+                    }
+                    .padding(.horizontal, Spacing.screen)
+                    .frame(height: toolbarHeight)
+                }
+                .frame(maxWidth: .infinity)
+
+                ResultSheet(viewModel: viewModel)
+                    .padding(.top, viewModel.isSheetExpanded ? Spacing.s : collapsedSheetTop)
+            }
+        }
+        .background(DSColor.bgPrimary)
+        .navigationTitle("그리기")  // 상세 화면의 뒤로 버튼 이름
+        .toolbar(.hidden, for: .navigationBar)
+        .task { await viewModel.start() }
+        .onChange(of: viewModel.canvasResetCount) {
+            canvas.clear()
+            canvas.select(.pen)
+        }
+    }
+}

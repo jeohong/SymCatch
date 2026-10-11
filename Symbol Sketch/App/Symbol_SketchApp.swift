@@ -13,7 +13,7 @@ struct Symbol_SketchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(container: container)
+            RootTabView(container: container)
         }
     }
 }

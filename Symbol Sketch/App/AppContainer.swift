@@ -24,8 +24,19 @@ final class AppContainer {
         self.indexDirectory = indexDirectory
     }
 
+    /// 앱이 쓰는 인식 방식(계획서 7장 결정 7: B 윤곽선)
+    static let recognitionMethod: RecognitionMethod = .visionOutline
+
+    /// 탭·내비게이션 상태. 앱 전체에서 하나.
+    let router = AppRouter()
+
     /// 인식 엔진은 한 번만 만들어 앱이 살아 있는 동안 유지한다(준비한 인덱스·윤곽선을 다시 만들지 않기 위함).
+    /// 그리기 화면과 인식 실험이 같은 엔진을 공유한다.
     private lazy var recognitionEngines: [RecognitionEngineOption] = RecognitionMethod.allCases.map { makeEngineOption($0) }
+
+    private var appEngine: RecognitionEngineOption {
+        recognitionEngines.first { $0.id == Self.recognitionMethod.rawValue }!
+    }
 
     static func live() -> AppContainer {
         guard let catalogURL = Bundle.main.url(forResource: "symbols", withExtension: "json") else {
@@ -50,6 +61,19 @@ final class AppContainer {
     }
 
     // MARK: - ViewModel 팩토리
+
+    func makeDrawViewModel(navigator: any DrawNavigating) -> DrawViewModel {
+        DrawViewModel(prepareIndex: appEngine.prepare, searchSymbols: appEngine.search, navigator: navigator)
+    }
+
+    func makeSymbolDetailViewModel(request: SymbolDetailRequest) -> SymbolDetailViewModel {
+        SymbolDetailViewModel(
+            request: request,
+            getDetail: DefaultGetSymbolDetailUseCase(catalog: symbolCatalog),
+            pasteboard: SystemPasteboard(),
+            haptics: SystemHaptics()
+        )
+    }
 
     func makeEvaluationCollectionViewModel() -> EvaluationCollectionViewModel {
         EvaluationCollectionViewModel(

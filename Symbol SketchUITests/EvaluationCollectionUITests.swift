@@ -19,7 +19,7 @@ final class EvaluationCollectionUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        app.buttons["평가셋 수집"].tap()
+        app.openDeveloperTool("평가셋 수집")
 
         let author = app.textFields["authorField"]
         XCTAssertTrue(author.waitForExistence(timeout: 5))
