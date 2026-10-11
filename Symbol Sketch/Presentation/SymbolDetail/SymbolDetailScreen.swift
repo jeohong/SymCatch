@@ -211,7 +211,7 @@ private struct CompareSection: View {
             switch viewModel.compareMode {
             case .sideBySide:
                 HStack(spacing: Spacing.s + Spacing.xxs) {
-                    tile(caption: "내 그림") { sketchView(lineWidth: 4) }
+                    tile(caption: viewModel.request.isPastSketch ? "당시 그림" : "내 그림") { sketchView(lineWidth: 4) }
                     tile(caption: "심볼") {
                         Image(systemName: viewModel.selectedName)
                             .font(.system(size: compareGlyph))

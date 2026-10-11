@@ -13,12 +13,14 @@ struct RootTabView: View {
     let container: AppContainer
     @State private var router: AppRouter
     @State private var drawViewModel: DrawViewModel
+    @State private var recentViewModel: RecentViewModel
 
     init(container: AppContainer) {
         self.container = container
         let router = container.router
         _router = State(initialValue: router)
         _drawViewModel = State(initialValue: container.makeDrawViewModel(navigator: router))
+        _recentViewModel = State(initialValue: container.makeRecentViewModel(navigator: router))
     }
 
     var body: some View {
@@ -39,9 +41,14 @@ struct RootTabView: View {
             .tabItem { Label("그리기", systemImage: "scribble") }
             .tag(AppTab.draw)
 
-            NavigationStack {
-                EmptyStateView(systemImage: "clock.arrow.circlepath", message: String(localized: "최근 찾은 심볼은 다음 단계(M2)에서 만들어요"))
-                    .navigationTitle("최근")
+            NavigationStack(path: $router.recentPath) {
+                RecentScreen(viewModel: recentViewModel)
+                    .navigationDestination(for: RecentRoute.self) { route in
+                        switch route {
+                        case .symbolDetail(let request):
+                            SymbolDetailScreen(viewModel: container.makeSymbolDetailViewModel(request: request))
+                        }
+                    }
             }
             .tabItem { Label("최근", systemImage: "clock.arrow.circlepath") }
             .tag(AppTab.recent)

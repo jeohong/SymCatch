@@ -108,6 +108,16 @@ final class AppContainer {
         )
     }
 
+    func makeRecentViewModel(navigator: any RecentNavigating) -> RecentViewModel {
+        RecentViewModel(
+            fetchRecent: DefaultFetchRecentRecordsUseCase(records: records),
+            deleteRecords: DefaultDeleteRecordsUseCase(records: records),
+            clearHistory: DefaultClearHistoryUseCase(records: records),
+            fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
+            navigator: navigator
+        )
+    }
+
     func makeCelebrationViewModel(celebration: Celebration, onFinish: @escaping () -> Void) -> CelebrationViewModel {
         CelebrationViewModel(celebration: celebration, haptics: SystemHaptics(), onFinish: onFinish)
     }

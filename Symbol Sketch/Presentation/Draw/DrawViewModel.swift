@@ -208,7 +208,7 @@ final class DrawViewModel {
 
     /// 상단 최근 칩을 탭: 당시 그림과 함께 상세로 간다.
     func selectRecent(_ record: FoundRecord) {
-        navigator?.showSymbolDetail(SymbolDetailRequest(name: record.symbolName, sketch: record.sketch, similarity: record.similarity))
+        navigator?.showSymbolDetail(SymbolDetailRequest(name: record.symbolName, sketch: record.sketch, similarity: record.similarity, isPastSketch: true))
     }
 
     // MARK: - 결과 선택·다시 그리기

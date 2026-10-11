@@ -336,6 +336,6 @@ struct DrawViewModelTests {
 
         viewModel.selectRecent(record)
 
-        #expect(navigator.shown == [SymbolDetailRequest(name: "heart", sketch: drawn, similarity: 88)])
+        #expect(navigator.shown == [SymbolDetailRequest(name: "heart", sketch: drawn, similarity: 88, isPastSketch: true)])
     }
 }
