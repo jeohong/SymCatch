@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct Symbol_SketchApp: App {
+    private let container = AppContainer.live()
+
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -6,6 +6,12 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D4104E54307AFFB700F0C18A /* Domain in Frameworks */ = {isa = PBXBuildFile; productRef = D4104E51307AFFB700F0C18A /* Domain */; };
+		D4104E55307AFFB700F0C18A /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = D4104E52307AFFB700F0C18A /* Storage */; };
+		D4104E56307AFFB700F0C18A /* Recognition in Frameworks */ = {isa = PBXBuildFile; productRef = D4104E53307AFFB700F0C18A /* Recognition */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		D4104E1D307AFFB700F0C18A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -51,6 +57,9 @@
 		D4104E0C307AFFB600F0C18A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				D4104E54307AFFB700F0C18A /* Domain in Frameworks */,
+				D4104E55307AFFB700F0C18A /* Storage in Frameworks */,
+				D4104E56307AFFB700F0C18A /* Recognition in Frameworks */,
 			);
 		};
 		D4104E19307AFFB700F0C18A /* Frameworks */ = {
@@ -103,6 +112,11 @@
 				D4104E11307AFFB600F0C18A /* Symbol Sketch */,
 			);
 			name = "Symbol Sketch";
+			packageProductDependencies = (
+				D4104E51307AFFB700F0C18A /* Domain */,
+				D4104E52307AFFB700F0C18A /* Storage */,
+				D4104E53307AFFB700F0C18A /* Recognition */,
+			);
 			productName = "Symbol Sketch";
 			productReference = D4104E0F307AFFB600F0C18A /* Symbol Sketch.app */;
 			productType = "com.apple.product-type.application";
@@ -181,6 +195,9 @@
 			);
 			mainGroup = D4104E06307AFFB600F0C18A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D4104E50307AFFB700F0C18A /* XCLocalSwiftPackageReference "Packages/SymbolSketchKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D4104E10307AFFB600F0C18A /* Products */;
 			projectDirPath = "";
@@ -548,6 +565,28 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D4104E50307AFFB700F0C18A /* XCLocalSwiftPackageReference "Packages/SymbolSketchKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SymbolSketchKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D4104E51307AFFB700F0C18A /* Domain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Domain;
+		};
+		D4104E52307AFFB700F0C18A /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Storage;
+		};
+		D4104E53307AFFB700F0C18A /* Recognition */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Recognition;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D4104E07307AFFB600F0C18A /* Project object */;
 	validationLevel = 1;
