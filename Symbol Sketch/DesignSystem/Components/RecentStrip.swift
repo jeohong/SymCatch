@@ -1,0 +1,63 @@
+//
+//  RecentStrip.swift
+//  Symbol Sketch
+//
+//  Created by Hongjeongmin on 10/11/26.
+//
+
+import SwiftUI
+import Domain
+
+/// 홈 상단 최근 찾은 심볼 5개(DESIGN_NOTES 3.3). 기록이 없으면 부르는 쪽에서 숨긴다.
+struct RecentStrip: View {
+    let records: [FoundRecord]
+    let onSelect: (FoundRecord) -> Void
+
+    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 32
+
+    var body: some View {
+        HStack(spacing: Spacing.s) {
+            Text("최근")
+                .font(DSFont.sectionHeader)
+                .foregroundStyle(DSColor.textSecondary)
+                .padding(.leading, Spacing.screen)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.s) {
+                    ForEach(records) { record in
+                        Button { onSelect(record) } label: { chip(record) }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(record.symbolName)
+                    }
+                }
+                .padding(.trailing, Spacing.screen)
+            }
+        }
+        .frame(minHeight: Metrics.minTapTarget)
+    }
+
+    private func chip(_ record: FoundRecord) -> some View {
+        HStack(spacing: Spacing.s) {
+            Image(systemName: record.symbolName)
+                .font(.system(size: glyphSize))
+                .foregroundStyle(DSColor.textPrimary)
+                .frame(width: tileSize, height: tileSize)
+                .background(DSColor.bgPrimary, in: RoundedRectangle(cornerRadius: Radius.chip + 2))
+            Text(record.symbolName)
+                .font(DSFont.symbolNameSmall)
+                .foregroundStyle(DSColor.textPrimary)
+                .lineLimit(1)
+        }
+        .padding(.leading, Spacing.xs + Spacing.xxs)
+        .padding(.trailing, Spacing.m)
+        .frame(minHeight: Metrics.minTapTarget)
+        .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.button))
+    }
+}
+
+private let previewRecords = ["heart", "star.fill", "cloud.sun", "bolt", "paperplane"].enumerated().map { index, name in
+    FoundRecord(symbolName: name, sketch: .empty, similarity: 90 - index, foundAt: .now)
+}
+
+#Preview("라이트") { RecentStrip(records: previewRecords) { _ in }.preferredColorScheme(.light) }
+#Preview("다크") { RecentStrip(records: previewRecords) { _ in }.background(DSColor.bgPrimary).preferredColorScheme(.dark) }

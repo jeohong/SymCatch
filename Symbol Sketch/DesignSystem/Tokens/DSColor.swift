@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Domain
 
 /// 색 토큰. 값은 Asset Catalog(Resources/Assets.xcassets/Colors)에 라이트·다크 쌍으로 있다.
 /// 화면 코드는 색 값을 직접 쓰지 않고 이 토큰만 쓴다. 출처: docs/design/DESIGN_NOTES.md 2.1
@@ -59,6 +60,24 @@ enum DSColor {
     static let scrim = Color(.scrim)
     /// "곧 찾아요" 진행 채움
     static let pending = Color(.pending)
+
+    /// 등급 기본색(칩 바탕·등급 점)
+    static func tier(_ tier: BadgeTier) -> Color {
+        switch tier {
+        case .bronze: bronze
+        case .silver: silver
+        case .gold: gold
+        }
+    }
+
+    /// 등급 밝은색(메달 링 그라데이션)
+    static func tierHighlight(_ tier: BadgeTier) -> Color {
+        switch tier {
+        case .bronze: bronzeHi
+        case .silver: silverHi
+        case .gold: goldHi
+        }
+    }
 
     /// 유사도 막대·테두리 색: 90% 이상 골드, 그 외 accent
     static func similarity(_ percent: Int) -> Color {
