@@ -29,5 +29,6 @@ let package = Package(
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
         .testTarget(name: "StorageTests", dependencies: ["Storage", "Domain"]),
+        .testTarget(name: "RecognitionTests", dependencies: ["Recognition", "Domain"]),
     ]
 )
