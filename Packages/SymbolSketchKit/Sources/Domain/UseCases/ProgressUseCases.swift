@@ -51,6 +51,22 @@ public struct DefaultClearHistoryUseCase: ClearHistoryUseCase {
     }
 }
 
+// MARK: - 보유 뱃지(결과 행·상세의 "보유 중" 표시)
+
+public protocol FetchBadgesUseCase: Sendable {
+    /// 심볼 이름 → 뱃지
+    func execute() async throws -> [String: SymbolBadge]
+}
+
+public struct DefaultFetchBadgesUseCase: FetchBadgesUseCase {
+    private let badges: any BadgeRepository
+    public init(badges: any BadgeRepository) { self.badges = badges }
+
+    public func execute() async throws -> [String: SymbolBadge] {
+        Dictionary(try await badges.all().map { ($0.symbolName, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+}
+
 // MARK: - 콜렉션(S6·S7)
 
 /// 카테고리 하나와 그 안의 심볼 이름들(콜렉션 격자 한 줄)

@@ -84,3 +84,32 @@ struct BadgeAwardPolicyTests {
         #expect(evaluate(existing: badge(.silver, best: 96), similarity: 92) == .none)
     }
 }
+
+struct BadgeHintTests {
+    private func match(_ similarity: Int, eligible: Bool = true) -> SymbolMatch {
+        SymbolMatch(name: "heart", variants: [], similarity: similarity, isBadgeEligible: eligible)
+    }
+
+    private func owned(_ tier: BadgeTier) -> SymbolBadge {
+        SymbolBadge(symbolName: "heart", tier: tier, bestSimilarity: 90, bestSketch: Fixtures.sketch, earnedAt: Fixtures.date())
+    }
+
+    @Test func 보유하지_않았고_구십_이상이면_획득_가능() {
+        #expect(BadgeHint.evaluate(match(92), owned: nil) == .eligible(.bronze))
+        #expect(BadgeHint.evaluate(match(89), owned: nil) == .none)
+    }
+
+    @Test func 더_높은_등급이면_승급_가능() {
+        #expect(BadgeHint.evaluate(match(96), owned: owned(.bronze)) == .eligible(.silver))
+        #expect(BadgeHint.evaluate(match(99), owned: owned(.silver)) == .eligible(.gold))
+    }
+
+    @Test func 같거나_낮은_등급이면_보유_중() {
+        #expect(BadgeHint.evaluate(match(93), owned: owned(.bronze)) == .owned(.bronze))
+        #expect(BadgeHint.evaluate(match(70), owned: owned(.gold)) == .owned(.gold))
+    }
+
+    @Test func 단순_심볼은_제외() {
+        #expect(BadgeHint.evaluate(match(99, eligible: false), owned: nil) == .excluded)
+    }
+}
