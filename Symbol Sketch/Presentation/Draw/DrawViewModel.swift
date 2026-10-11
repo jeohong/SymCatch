@@ -43,6 +43,8 @@ final class DrawViewModel {
     private(set) var recentRecords: [FoundRecord] = []
     /// 보유 뱃지(심볼 이름 → 뱃지). 결과 행의 "보유 중" 표시에 쓴다.
     private(set) var badges: [String: SymbolBadge] = [:]
+    /// 도전 모드 목표 심볼(S7 "더 높은 등급에 도전"). 최근 스트립 자리에 목표 카드를 띄운다.
+    private(set) var challengeTarget: String?
 
     /// 진행 중인 자동 검색(테스트에서 끝나기를 기다릴 때 쓴다)
     private(set) var pendingSearch: Task<Void, Never>?
@@ -211,6 +213,25 @@ final class DrawViewModel {
         navigator?.showSymbolDetail(SymbolDetailRequest(name: record.symbolName, sketch: record.sketch, similarity: record.similarity, isPastSketch: true))
     }
 
+    // MARK: - 도전 모드(기획서 5.1-6, DESIGN_NOTES 3.4)
+
+    /// 콜렉션에서 도전하러 왔을 때: 캔버스를 비우고 목표를 띄운다.
+    func startChallenge(symbolName: String) {
+        challengeTarget = symbolName
+        clearCanvas()
+        isSheetExpanded = false
+    }
+
+    /// 목표 카드의 닫기
+    func endChallenge() {
+        challengeTarget = nil
+    }
+
+    /// 목표 심볼에 이미 받은 뱃지
+    var challengeBadge: SymbolBadge? {
+        challengeTarget.flatMap { badges[$0] }
+    }
+
     // MARK: - 결과 선택·다시 그리기
 
     /// 결과 항목을 탭 = "찾았다"(기획서 2.2, 5.1-3).
@@ -228,6 +249,10 @@ final class DrawViewModel {
                 // 저장에 실패해도 상세 화면은 그대로 쓸 수 있다. 다음 선택 때 다시 저장된다.
             }
             await refreshProgress()
+            // 목표 심볼을 골드로 달성하면 목표를 자동으로 내린다.
+            if let target = challengeTarget, badges[target]?.tier == .gold {
+                challengeTarget = nil
+            }
         }
     }
 

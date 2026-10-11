@@ -87,6 +87,17 @@ private struct StubBadges: FetchBadgesUseCase {
     func execute() async throws -> [String: SymbolBadge] { badges }
 }
 
+private final class MutableBadges: FetchBadgesUseCase, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: [String: SymbolBadge]
+    init(_ badges: [String: SymbolBadge]) { stored = badges }
+    var badges: [String: SymbolBadge] {
+        get { lock.withLock { stored } }
+        set { lock.withLock { stored = newValue } }
+    }
+    func execute() async throws -> [String: SymbolBadge] { badges }
+}
+
 @MainActor
 private final class SpyNavigator: DrawNavigating {
     var shown: [SymbolDetailRequest] = []
@@ -327,6 +338,46 @@ struct DrawViewModelTests {
         await viewModel.pendingSelection?.value
 
         #expect(viewModel.recentRecords.map(\.symbolName) == ["r1", "r2", "r3", "r4", "r5"])
+    }
+
+    // MARK: - 도전 모드
+
+    @Test func 도전을_시작하면_캔버스를_비우고_목표를_띄운다() async {
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)))
+        await viewModel.start()
+        viewModel.sketchDidChange(drawn)
+        await viewModel.pendingSearch?.value
+
+        viewModel.startChallenge(symbolName: "heart")
+
+        #expect(viewModel.challengeTarget == "heart")
+        #expect(viewModel.matches.isEmpty)
+        #expect(viewModel.canvasResetCount == 1)
+
+        viewModel.endChallenge()
+        #expect(viewModel.challengeTarget == nil)
+    }
+
+    @Test func 목표를_골드로_달성하면_목표가_내려간다() async {
+        let silver = SymbolBadge(symbolName: "s1", tier: .silver, bestSimilarity: 96, bestSketch: drawn, earnedAt: .now)
+        var gold = silver
+        gold.tier = .gold
+        let badges = MutableBadges(["s1": silver])
+        let viewModel = DrawViewModel(prepareIndex: StubPrepare(ready: true), searchSymbols: StubSearch(outcome: .results(results)),
+                                      selectSymbol: StubSelect(), fetchRecent: StubRecent(), fetchBadges: badges, navigator: nil, debounce: .zero)
+        await viewModel.refreshProgress()
+        viewModel.startChallenge(symbolName: "s1")
+        #expect(viewModel.challengeBadge?.tier == .silver)
+
+        // 실버 그대로면 목표 유지
+        viewModel.select(results[0])
+        await viewModel.pendingSelection?.value
+        #expect(viewModel.challengeTarget == "s1")
+
+        badges.badges = ["s1": gold]
+        viewModel.select(results[0])
+        await viewModel.pendingSelection?.value
+        #expect(viewModel.challengeTarget == nil)
     }
 
     @Test func 최근_칩을_고르면_당시_그림으로_상세를_연다() {

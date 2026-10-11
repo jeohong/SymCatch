@@ -23,14 +23,20 @@ struct DrawScreen: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let stripHeight = viewModel.recentRecords.isEmpty ? 0 : recentStripHeight
+            let showsStrip = viewModel.challengeTarget != nil || !viewModel.recentRecords.isEmpty
+            let stripHeight = showsStrip ? recentStripHeight : 0
             let canvasSide = max(160, min(proxy.size.width - Spacing.screen * 2,
                                           proxy.size.height - stripHeight - Spacing.s - toolbarHeight - minimumSheetHeight))
             let collapsedSheetTop = stripHeight + Spacing.s + canvasSide + toolbarHeight
 
             ZStack(alignment: .top) {
                 VStack(spacing: 0) {
-                    if !viewModel.recentRecords.isEmpty {
+                    // 도전 중이면 목표 카드가 최근 스트립 자리를 대신한다(DESIGN_NOTES 3.3).
+                    if let target = viewModel.challengeTarget {
+                        TargetBanner(symbolName: target, badge: viewModel.challengeBadge) { viewModel.endChallenge() }
+                            .padding(.horizontal, Spacing.screen)
+                            .frame(height: recentStripHeight)
+                    } else if !viewModel.recentRecords.isEmpty {
                         RecentStrip(records: viewModel.recentRecords) { viewModel.selectRecent($0) }
                             .frame(height: recentStripHeight)
                     }
