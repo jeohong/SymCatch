@@ -12,4 +12,6 @@ public protocol SymbolCatalogRepository: Sendable {
     func allSymbols() async throws -> [SymbolMeta]
     func categories() async throws -> [SymbolCategory]
     func symbol(named name: String) async throws -> SymbolMeta?
+    /// 같은 family(채움·테두리 변형)의 모든 심볼. 없으면 빈 배열.
+    func symbols(inFamily family: String) async throws -> [SymbolMeta]
 }

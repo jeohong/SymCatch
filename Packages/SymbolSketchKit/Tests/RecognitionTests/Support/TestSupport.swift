@@ -22,6 +22,10 @@ struct StubSymbolCatalog: SymbolCatalogRepository {
     func symbol(named name: String) async throws -> SymbolMeta? {
         try await allSymbols().first { $0.name == name }
     }
+
+    func symbols(inFamily family: String) async throws -> [SymbolMeta] {
+        try await allSymbols().filter { $0.family == family }
+    }
 }
 
 enum TestSketches {

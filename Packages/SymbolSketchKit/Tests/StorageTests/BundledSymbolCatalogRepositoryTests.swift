@@ -34,6 +34,8 @@ struct BundledSymbolCatalogRepositoryTests {
         #expect(try await repository.categories().map(\.key) == ["health"])
         #expect(try await repository.symbol(named: "heart.fill")?.family == "heart")
         #expect(try await repository.symbol(named: "star") == nil)
+        #expect(try await repository.symbols(inFamily: "heart").map(\.name) == ["heart", "heart.fill"])
+        #expect(try await repository.symbols(inFamily: "star").isEmpty)
     }
 
     @Test func 파일이_없으면_오류() async {
