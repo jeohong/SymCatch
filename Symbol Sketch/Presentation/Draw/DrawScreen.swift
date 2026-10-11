@@ -18,15 +18,22 @@ struct DrawScreen: View {
     private let toolbarHeight: CGFloat = 58
     /// 접힌 결과 시트가 최소한 차지할 높이(Top 3 카드가 보이도록)
     private let minimumSheetHeight: CGFloat = 200
+    /// 상단 최근 스트립 높이(DESIGN_NOTES 3.3: 56 = 위 여백 6 + 칩 44 + 아래 6)
+    private let recentStripHeight: CGFloat = 56
 
     var body: some View {
         GeometryReader { proxy in
+            let stripHeight = viewModel.recentRecords.isEmpty ? 0 : recentStripHeight
             let canvasSide = max(160, min(proxy.size.width - Spacing.screen * 2,
-                                          proxy.size.height - Spacing.s - toolbarHeight - minimumSheetHeight))
-            let collapsedSheetTop = Spacing.s + canvasSide + toolbarHeight
+                                          proxy.size.height - stripHeight - Spacing.s - toolbarHeight - minimumSheetHeight))
+            let collapsedSheetTop = stripHeight + Spacing.s + canvasSide + toolbarHeight
 
             ZStack(alignment: .top) {
                 VStack(spacing: 0) {
+                    if !viewModel.recentRecords.isEmpty {
+                        RecentStrip(records: viewModel.recentRecords) { viewModel.selectRecent($0) }
+                            .frame(height: recentStripHeight)
+                    }
                     DrawCanvasArea(
                         controller: canvas,
                         isEmpty: viewModel.sketch.isEmpty,
@@ -52,6 +59,7 @@ struct DrawScreen: View {
         .navigationTitle("그리기")  // 상세 화면의 뒤로 버튼 이름
         .toolbar(.hidden, for: .navigationBar)
         .task { await viewModel.start() }
+        .task { await viewModel.refreshProgress() }  // 탭을 오갈 때마다 다시 읽는다
         .onChange(of: viewModel.canvasResetCount) {
             canvas.clear()
             canvas.select(.pen)

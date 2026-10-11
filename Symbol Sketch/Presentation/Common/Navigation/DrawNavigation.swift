@@ -26,4 +26,6 @@ enum DrawRoute: Hashable {
 @MainActor
 protocol DrawNavigating: AnyObject {
     func showSymbolDetail(_ request: SymbolDetailRequest)
+    /// 뱃지 획득 모달(S4)
+    func showCelebration(_ celebration: Celebration)
 }

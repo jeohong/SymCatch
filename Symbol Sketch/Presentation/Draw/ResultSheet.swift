@@ -104,7 +104,7 @@ struct ResultSheet: View {
         HStack(alignment: .top, spacing: Spacing.s) {
             ForEach(Array(viewModel.previewMatches.enumerated()), id: \.element.id) { index, match in
                 Button { viewModel.select(match) } label: {
-                    ResultCard(rank: index + 1, match: match, isBadgeEligible: viewModel.isBadgeEligible(match))
+                    ResultCard(rank: index + 1, match: match, badgeHint: viewModel.badgeHint(for: match))
                 }
                 .buttonStyle(.plain)
             }
@@ -116,7 +116,7 @@ struct ResultSheet: View {
         VStack(spacing: Spacing.s) {
             ForEach(Array(viewModel.matches.enumerated()), id: \.element.id) { index, match in
                 Button { viewModel.select(match) } label: {
-                    SymbolResultRow(rank: index + 1, match: match, isBadgeEligible: viewModel.isBadgeEligible(match))
+                    SymbolResultRow(rank: index + 1, match: match, badgeHint: viewModel.badgeHint(for: match))
                 }
                 .buttonStyle(.plain)
             }

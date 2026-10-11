@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Domain
 import Storage
 import Recognition
@@ -17,11 +18,21 @@ final class AppContainer {
     let evaluationSamples: any EvaluationSampleRepository
     /// 심볼 인덱스 파일을 두는 폴더(방식마다 파일 하나)
     let indexDirectory: URL
+    // 기록·뱃지·업적·통계(SwiftData)
+    let records: any FoundRecordRepository
+    let badges: any BadgeRepository
+    let achievements: any AchievementRepository
+    let stats: any UserStatsRepository
 
-    init(symbolCatalog: any SymbolCatalogRepository, evaluationSamples: any EvaluationSampleRepository, indexDirectory: URL) {
+    init(symbolCatalog: any SymbolCatalogRepository, evaluationSamples: any EvaluationSampleRepository, indexDirectory: URL,
+         progressContainer: ModelContainer) {
         self.symbolCatalog = symbolCatalog
         self.evaluationSamples = evaluationSamples
         self.indexDirectory = indexDirectory
+        records = SwiftDataFoundRecordRepository(modelContainer: progressContainer)
+        badges = SwiftDataBadgeRepository(modelContainer: progressContainer)
+        achievements = SwiftDataAchievementRepository(modelContainer: progressContainer)
+        stats = SwiftDataUserStatsRepository(modelContainer: progressContainer)
     }
 
     /// 앱이 쓰는 인식 방식(계획서 7장 결정 7: B 윤곽선)
@@ -46,9 +57,32 @@ final class AppContainer {
         return AppContainer(
             symbolCatalog: BundledSymbolCatalogRepository(fileURL: catalogURL),
             evaluationSamples: FileEvaluationSampleRepository(directory: support.appending(path: "EvaluationSamples")),
-            indexDirectory: support.appending(path: "SymbolIndex")
+            indexDirectory: support.appending(path: "SymbolIndex"),
+            progressContainer: makeProgressContainer(url: support.appending(path: "Progress.store"))
         )
     }
+
+    /// 기록 저장소. UI 테스트는 매번 빈 상태에서 시작하도록 메모리에만 둔다.
+    /// 파일을 열지 못하면(저장 형식 손상 등) 앱은 계속 쓸 수 있게 메모리 저장소로 연다.
+    private static func makeProgressContainer(url: URL) -> ModelContainer {
+        do {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains(uiTestingInMemoryArgument) {
+                return try ProgressModelContainerFactory.inMemory()
+            }
+            #endif
+            return try ProgressModelContainerFactory.live(url: url)
+        } catch {
+            do {
+                return try ProgressModelContainerFactory.inMemory()
+            } catch {
+                fatalError("기록 저장소를 만들지 못했습니다: \(error)")
+            }
+        }
+    }
+
+    /// UI 테스트 실행 인자: 기록을 메모리에만 저장
+    static let uiTestingInMemoryArgument = "-UITestingInMemoryProgress"
 
     /// Preview용: 앱 데이터와 섞이지 않도록 임시 폴더를 쓴다.
     static func preview() -> AppContainer {
@@ -56,14 +90,26 @@ final class AppContainer {
         return AppContainer(
             symbolCatalog: BundledSymbolCatalogRepository(fileURL: temporary.appending(path: "symbols.json")),
             evaluationSamples: FileEvaluationSampleRepository(directory: temporary.appending(path: "EvaluationSamples")),
-            indexDirectory: temporary.appending(path: "SymbolIndex")
+            indexDirectory: temporary.appending(path: "SymbolIndex"),
+            progressContainer: try! ProgressModelContainerFactory.inMemory()
         )
     }
 
     // MARK: - ViewModel 팩토리
 
     func makeDrawViewModel(navigator: any DrawNavigating) -> DrawViewModel {
-        DrawViewModel(prepareIndex: appEngine.prepare, searchSymbols: appEngine.search, navigator: navigator)
+        DrawViewModel(
+            prepareIndex: appEngine.prepare,
+            searchSymbols: appEngine.search,
+            selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
+            fetchRecent: DefaultFetchRecentRecordsUseCase(records: records),
+            fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
+            navigator: navigator
+        )
+    }
+
+    func makeCelebrationViewModel(celebration: Celebration, onFinish: @escaping () -> Void) -> CelebrationViewModel {
+        CelebrationViewModel(celebration: celebration, haptics: SystemHaptics(), onFinish: onFinish)
     }
 
     func makeSymbolDetailViewModel(request: SymbolDetailRequest) -> SymbolDetailViewModel {

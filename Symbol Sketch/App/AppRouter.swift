@@ -18,8 +18,18 @@ enum AppTab: Hashable {
 final class AppRouter: DrawNavigating {
     var selectedTab: AppTab = .draw
     var drawPath: [DrawRoute] = []
+    /// 떠 있는 축하 모달(S4). 탭 바까지 덮는다.
+    var celebration: Celebration?
 
     func showSymbolDetail(_ request: SymbolDetailRequest) {
         drawPath.append(.symbolDetail(request))
+    }
+
+    func showCelebration(_ celebration: Celebration) {
+        self.celebration = celebration
+    }
+
+    func dismissCelebration() {
+        celebration = nil
     }
 }

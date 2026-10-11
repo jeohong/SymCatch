@@ -52,10 +52,47 @@ private final class StubSearch: SearchSymbolsUseCase, @unchecked Sendable {
     }
 }
 
+private final class StubSelect: SelectSymbolUseCase, @unchecked Sendable {
+    private let lock = NSLock()
+    private var selected: [(SymbolMatch, Sketch)] = []
+    var award: BadgeAward = .none
+    var achievements: [Achievement] = []
+    var failure: Error?
+
+    var calls: [(SymbolMatch, Sketch)] { lock.withLock { selected } }
+
+    func execute(match: SymbolMatch, sketch: Sketch, now: Date) async throws -> SelectionOutcome {
+        lock.withLock { selected.append((match, sketch)) }
+        if let failure { throw failure }
+        return SelectionOutcome(record: FoundRecord(symbolName: match.name, sketch: sketch, similarity: match.similarity, foundAt: now),
+                                badgeAward: award, newAchievements: achievements)
+    }
+}
+
+private final class StubRecent: FetchRecentRecordsUseCase, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: [FoundRecord] = []
+    var records: [FoundRecord] {
+        get { lock.withLock { stored } }
+        set { lock.withLock { stored = newValue } }
+    }
+    func execute(limit: Int?) async throws -> [FoundRecord] {
+        let all = records
+        return limit.map { Array(all.prefix($0)) } ?? all
+    }
+}
+
+private struct StubBadges: FetchBadgesUseCase {
+    var badges: [String: SymbolBadge] = [:]
+    func execute() async throws -> [String: SymbolBadge] { badges }
+}
+
 @MainActor
 private final class SpyNavigator: DrawNavigating {
     var shown: [SymbolDetailRequest] = []
+    var celebrations: [Celebration] = []
     func showSymbolDetail(_ request: SymbolDetailRequest) { shown.append(request) }
+    func showCelebration(_ celebration: Celebration) { celebrations.append(celebration) }
 }
 
 private struct PreparationFailed: Error {}
@@ -69,10 +106,14 @@ struct DrawViewModelTests {
         ready: Bool = true,
         search: StubSearch,
         navigator: SpyNavigator? = nil,
+        select: StubSelect = StubSelect(),
+        recent: StubRecent = StubRecent(),
+        badges: StubBadges = StubBadges(),
         skeletonDelay: Duration = .milliseconds(300)
     ) -> DrawViewModel {
-        DrawViewModel(prepareIndex: StubPrepare(ready: ready), searchSymbols: search, navigator: navigator,
-                      debounce: .zero, skeletonDelay: skeletonDelay)
+        DrawViewModel(prepareIndex: StubPrepare(ready: ready), searchSymbols: search, selectSymbol: select,
+                      fetchRecent: recent, fetchBadges: badges, navigator: navigator,
+                      now: { Date(timeIntervalSince1970: 1_791_720_000) }, debounce: .zero, skeletonDelay: skeletonDelay)
     }
 
     @Test func 인덱스가_있으면_바로_준비됨() async {
@@ -94,7 +135,8 @@ struct DrawViewModelTests {
     @Test func 준비에_실패하면_오류를_보여주고_다시_준비할_수_있다() async {
         let prepare = StubPrepare(ready: false)
         prepare.failure = PreparationFailed()
-        let viewModel = DrawViewModel(prepareIndex: prepare, searchSymbols: StubSearch(outcome: .results([])), navigator: nil, debounce: .zero)
+        let viewModel = DrawViewModel(prepareIndex: prepare, searchSymbols: StubSearch(outcome: .results([])), selectSymbol: StubSelect(),
+                                      fetchRecent: StubRecent(), fetchBadges: StubBadges(), navigator: nil, debounce: .zero)
         await viewModel.start()
         while case .preparing = viewModel.preparation { await Task.yield() }
         guard case .failed = viewModel.preparation else {
@@ -196,9 +238,104 @@ struct DrawViewModelTests {
         #expect(viewModel.phase == .idle)
     }
 
-    @Test func 뱃지_표시는_90퍼센트_이상() {
-        let viewModel = makeViewModel(search: StubSearch(outcome: .results([])))
-        #expect(viewModel.isBadgeEligible(SymbolMatch(name: "a", variants: [], similarity: 90)))
-        #expect(!viewModel.isBadgeEligible(SymbolMatch(name: "a", variants: [], similarity: 89)))
+    @Test func 뱃지_표시는_90퍼센트_이상이고_보유_등급을_반영한다() async {
+        let owned = SymbolBadge(symbolName: "owned", tier: .silver, bestSimilarity: 96, bestSketch: drawn, earnedAt: .now)
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results([])), badges: StubBadges(badges: ["owned": owned]))
+        await viewModel.refreshProgress()
+
+        #expect(viewModel.badgeHint(for: SymbolMatch(name: "a", variants: [], similarity: 90)) == .eligible(.bronze))
+        #expect(viewModel.badgeHint(for: SymbolMatch(name: "a", variants: [], similarity: 89)) == .none)
+        #expect(viewModel.badgeHint(for: SymbolMatch(name: "owned", variants: [], similarity: 92)) == .owned(.silver))
+        #expect(viewModel.badgeHint(for: SymbolMatch(name: "owned", variants: [], similarity: 99)) == .eligible(.gold))
+    }
+
+    // MARK: - M2 결과 선택·최근 기록
+
+    @Test func 결과를_고르면_그림과_함께_기록을_저장한다() async {
+        let select = StubSelect()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)), select: select)
+        await viewModel.start()
+        viewModel.sketchDidChange(drawn)
+        await viewModel.pendingSearch?.value
+
+        viewModel.select(results[1])
+        await viewModel.pendingSelection?.value
+
+        #expect(select.calls.map(\.0.name) == ["s2"])
+        #expect(select.calls.first?.1 == drawn)
+    }
+
+    @Test func 새_뱃지와_업적이면_축하_모달을_띄운다() async {
+        let select = StubSelect()
+        let badge = SymbolBadge(symbolName: "s1", tier: .gold, bestSimilarity: 99, bestSketch: drawn, earnedAt: .now)
+        select.award = .newBadge(badge)
+        select.achievements = [Achievement(id: .sharpshooter, progress: 1, unlockedAt: .now)]
+        let navigator = SpyNavigator()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)), navigator: navigator, select: select)
+        await viewModel.start()
+        viewModel.sketchDidChange(drawn)
+        await viewModel.pendingSearch?.value
+
+        viewModel.select(results[0])
+        await viewModel.pendingSelection?.value
+
+        #expect(navigator.shown.map(\.name) == ["s1"])          // 상세는 바로 열린다
+        #expect(navigator.celebrations.count == 1)
+        guard case .badge(let name, let tier, let isUpgrade, _, _, _) = navigator.celebrations.first?.cards.first else {
+            Issue.record("첫 장은 뱃지 카드여야 한다")
+            return
+        }
+        #expect(name == "s1" && tier == .gold && !isUpgrade)
+        #expect(navigator.celebrations.first?.cards.count == 2)
+    }
+
+    @Test func 축하할_것이_없으면_모달_없이_상세만() async {
+        let select = StubSelect()
+        select.award = .silentUpdate(SymbolBadge(symbolName: "s1", tier: .bronze, bestSimilarity: 93, bestSketch: drawn, earnedAt: .now))
+        let navigator = SpyNavigator()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)), navigator: navigator, select: select)
+        await viewModel.start()
+
+        viewModel.select(results[0])
+        await viewModel.pendingSelection?.value
+
+        #expect(navigator.shown.count == 1)
+        #expect(navigator.celebrations.isEmpty)
+    }
+
+    @Test func 저장에_실패해도_상세는_열린다() async {
+        let select = StubSelect()
+        select.failure = PreparationFailed()
+        let navigator = SpyNavigator()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)), navigator: navigator, select: select)
+
+        viewModel.select(results[0])
+        await viewModel.pendingSelection?.value
+
+        #expect(navigator.shown.count == 1)
+        #expect(navigator.celebrations.isEmpty)
+    }
+
+    @Test func 고른_뒤_최근_목록이_갱신되고_최대_5개() async {
+        let recent = StubRecent()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)), recent: recent)
+        await viewModel.refreshProgress()
+        #expect(viewModel.recentRecords.isEmpty)
+
+        recent.records = (1...7).map { FoundRecord(symbolName: "r\($0)", sketch: drawn, similarity: 50, foundAt: .now) }
+        viewModel.select(results[0])
+        await viewModel.pendingSelection?.value
+
+        #expect(viewModel.recentRecords.map(\.symbolName) == ["r1", "r2", "r3", "r4", "r5"])
+    }
+
+    @Test func 최근_칩을_고르면_당시_그림으로_상세를_연다() {
+        let navigator = SpyNavigator()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results([])), navigator: navigator)
+        let record = FoundRecord(symbolName: "heart", sketch: drawn, similarity: 88, foundAt: .now)
+
+        viewModel.selectRecent(record)
+
+        #expect(navigator.shown == [SymbolDetailRequest(name: "heart", sketch: drawn, similarity: 88)])
     }
 }

@@ -12,7 +12,7 @@ import Domain
 struct ResultCard: View {
     let rank: Int
     let match: SymbolMatch
-    let isBadgeEligible: Bool
+    let badgeHint: BadgeHint
 
     @ScaledMetric(relativeTo: .largeTitle) private var glyphSize = Metrics.cardGlyph
 
@@ -24,7 +24,7 @@ struct ResultCard: View {
                     .foregroundStyle(DSColor.textPrimary)
                     .frame(height: glyphSize)
                 Spacer(minLength: 0)
-                if isBadgeEligible {
+                if badgeHint.isEligible {
                     Text("뱃지")
                         .font(DSFont.chip)
                         .foregroundStyle(DSColor.onBadge)
@@ -55,16 +55,16 @@ struct ResultCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: Radius.card))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(String(localized: "\(match.name), 유사도 \(match.similarity)퍼센트") + (isBadgeEligible ? String(localized: ", 뱃지 획득 가능") : ""))
+        .accessibilityLabel(String(localized: "\(match.name), 유사도 \(match.similarity)퍼센트") + badgeHint.accessibilitySuffix)
         .accessibilityAddTraits(.isButton)
     }
 }
 
 #Preview("라이트") {
     HStack(spacing: Spacing.s) {
-        ResultCard(rank: 1, match: SymbolMatch(name: "heart", variants: [], similarity: 94), isBadgeEligible: true)
-        ResultCard(rank: 2, match: SymbolMatch(name: "suit.heart", variants: [], similarity: 81), isBadgeEligible: false)
-        ResultCard(rank: 3, match: SymbolMatch(name: "drop", variants: [], similarity: 61), isBadgeEligible: false)
+        ResultCard(rank: 1, match: SymbolMatch(name: "heart", variants: [], similarity: 94), badgeHint: .eligible(.bronze))
+        ResultCard(rank: 2, match: SymbolMatch(name: "suit.heart", variants: [], similarity: 81), badgeHint: .none)
+        ResultCard(rank: 3, match: SymbolMatch(name: "drop", variants: [], similarity: 61), badgeHint: .none)
     }
     .padding()
     .background(DSColor.bgSecondary)
@@ -73,9 +73,9 @@ struct ResultCard: View {
 
 #Preview("다크") {
     HStack(spacing: Spacing.s) {
-        ResultCard(rank: 1, match: SymbolMatch(name: "heart", variants: [], similarity: 94), isBadgeEligible: true)
-        ResultCard(rank: 2, match: SymbolMatch(name: "suit.heart", variants: [], similarity: 81), isBadgeEligible: false)
-        ResultCard(rank: 3, match: SymbolMatch(name: "drop", variants: [], similarity: 61), isBadgeEligible: false)
+        ResultCard(rank: 1, match: SymbolMatch(name: "heart", variants: [], similarity: 94), badgeHint: .eligible(.bronze))
+        ResultCard(rank: 2, match: SymbolMatch(name: "suit.heart", variants: [], similarity: 81), badgeHint: .none)
+        ResultCard(rank: 3, match: SymbolMatch(name: "drop", variants: [], similarity: 61), badgeHint: .none)
     }
     .padding()
     .background(DSColor.bgSecondary)

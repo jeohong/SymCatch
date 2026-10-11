@@ -52,6 +52,17 @@ struct RootTabView: View {
             .tabItem { Label("콜렉션", systemImage: "rosette") }
             .tag(AppTab.collection)
         }
+        .overlay {
+            // 축하 모달(S4)은 탭 바까지 덮는다.
+            if let celebration = router.celebration {
+                CelebrationOverlay(viewModel: container.makeCelebrationViewModel(celebration: celebration) {
+                    router.dismissCelebration()
+                })
+                .id(celebration.id)
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: router.celebration)
     }
 }
 

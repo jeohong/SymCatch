@@ -39,30 +39,49 @@ final class DrawViewModel {
     /// 값이 바뀌면 화면이 캔버스를 비운다.
     private(set) var canvasResetCount = 0
     private(set) var sketch: Sketch = .empty
+    /// 홈 상단 최근 찾은 심볼(최대 5개)
+    private(set) var recentRecords: [FoundRecord] = []
+    /// 보유 뱃지(심볼 이름 → 뱃지). 결과 행의 "보유 중" 표시에 쓴다.
+    private(set) var badges: [String: SymbolBadge] = [:]
 
     /// 진행 중인 자동 검색(테스트에서 끝나기를 기다릴 때 쓴다)
     private(set) var pendingSearch: Task<Void, Never>?
     private var preparationTask: Task<Void, Never>?
+    /// 결과 탭 후 저장 중인 작업(테스트에서 끝나기를 기다릴 때 쓴다)
+    private(set) var pendingSelection: Task<Void, Never>?
 
     private let prepareIndex: any PrepareSymbolIndexUseCase
     private let searchSymbols: any SearchSymbolsUseCase
+    private let selectSymbol: any SelectSymbolUseCase
+    private let fetchRecent: any FetchRecentRecordsUseCase
+    private let fetchBadges: any FetchBadgesUseCase
     private weak var navigator: (any DrawNavigating)?
+    private let now: () -> Date
     private let debounce: Duration
     private let skeletonDelay: Duration
 
     static let resultLimit = 10
     static let previewCount = 3
+    static let recentCount = 5
 
     init(
         prepareIndex: any PrepareSymbolIndexUseCase,
         searchSymbols: any SearchSymbolsUseCase,
+        selectSymbol: any SelectSymbolUseCase,
+        fetchRecent: any FetchRecentRecordsUseCase,
+        fetchBadges: any FetchBadgesUseCase,
         navigator: (any DrawNavigating)?,
+        now: @escaping () -> Date = Date.init,
         debounce: Duration = .milliseconds(600),
         skeletonDelay: Duration = .milliseconds(300)
     ) {
         self.prepareIndex = prepareIndex
         self.searchSymbols = searchSymbols
+        self.selectSymbol = selectSymbol
+        self.fetchRecent = fetchRecent
+        self.fetchBadges = fetchBadges
         self.navigator = navigator
+        self.now = now
         self.debounce = debounce
         self.skeletonDelay = skeletonDelay
     }
@@ -73,9 +92,9 @@ final class DrawViewModel {
     var canSearch: Bool { isReady && !sketch.isEmpty }
     var previewMatches: [SymbolMatch] { Array(matches.prefix(Self.previewCount)) }
 
-    /// 90% 이상이면 탭해서 뱃지를 받을 수 있다(기획서 3.1). 보유 여부는 M2에서 반영한다.
-    func isBadgeEligible(_ match: SymbolMatch) -> Bool {
-        match.similarity >= 90
+    /// 결과 행의 뱃지 안내. 이미 받은 등급 이상이면 "보유 중"(기획서 3.1).
+    func badgeHint(for match: SymbolMatch) -> BadgeHint {
+        BadgeHint.evaluate(match, owned: badges[match.name])
     }
 
     // MARK: - 인덱스 준비
@@ -175,11 +194,41 @@ final class DrawViewModel {
         }
     }
 
+    // MARK: - 최근 기록·뱃지
+
+    /// 화면이 보일 때마다: 다른 탭에서 기록을 지웠을 수 있으므로 다시 읽는다.
+    func refreshProgress() async {
+        do {
+            recentRecords = try await fetchRecent.execute(limit: Self.recentCount)
+            badges = try await fetchBadges.execute()
+        } catch {
+            // 표시용이라 실패해도 그리기는 계속할 수 있다. 다음에 화면이 보일 때 다시 읽는다.
+        }
+    }
+
+    /// 상단 최근 칩을 탭: 당시 그림과 함께 상세로 간다.
+    func selectRecent(_ record: FoundRecord) {
+        navigator?.showSymbolDetail(SymbolDetailRequest(name: record.symbolName, sketch: record.sketch, similarity: record.similarity))
+    }
+
     // MARK: - 결과 선택·다시 그리기
 
-    /// 결과 항목을 탭: 심볼 상세로 간다. (최근 기록 저장·뱃지 판정은 M2에서 이 자리에 붙는다)
+    /// 결과 항목을 탭 = "찾았다"(기획서 2.2, 5.1-3).
+    /// 상세로 바로 가고, 그 사이 기록을 저장한다. 새 뱃지·승급·업적이 있으면 상세 위에 축하 모달을 띄운다.
     func select(_ match: SymbolMatch) {
+        let sketch = sketch
         navigator?.showSymbolDetail(SymbolDetailRequest(name: match.name, sketch: sketch, similarity: match.similarity))
+        pendingSelection = Task {
+            do {
+                let outcome = try await selectSymbol.execute(match: match, sketch: sketch, now: now())
+                if let celebration = Celebration(outcome: outcome, sketch: sketch) {
+                    navigator?.showCelebration(celebration)
+                }
+            } catch {
+                // 저장에 실패해도 상세 화면은 그대로 쓸 수 있다. 다음 선택 때 다시 저장된다.
+            }
+            await refreshProgress()
+        }
     }
 
     /// "다시 그리기": 캔버스를 비우고 시트를 접는다.

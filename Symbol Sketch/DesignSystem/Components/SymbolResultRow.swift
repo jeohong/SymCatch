@@ -13,8 +13,8 @@ import Domain
 struct SymbolResultRow: View {
     let rank: Int
     let match: SymbolMatch
-    /// 90% 이상이라 탭하면 뱃지를 받을 수 있는지
-    let isBadgeEligible: Bool
+    /// 뱃지 안내(획득 가능 · 보유 중 · 단순 심볼 제외)
+    let badgeHint: BadgeHint
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .title) private var glyphSize = Metrics.rowGlyph
@@ -80,9 +80,7 @@ struct SymbolResultRow: View {
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 .truncationMode(.middle)
             HStack(spacing: Spacing.s - Spacing.xxs) {
-                if isBadgeEligible {
-                    BadgeEligibleChip()
-                }
+                BadgeHintLabel(hint: badgeHint)
                 if !match.variants.isEmpty {
                     Text("변형 \(match.variants.count)개")
                         .font(.caption)
@@ -104,20 +102,49 @@ struct SymbolResultRow: View {
 
     private var accessibilityText: String {
         var text = String(localized: "\(match.name), 유사도 \(match.similarity)퍼센트")
-        if isBadgeEligible { text += String(localized: ", 뱃지 획득 가능") }
+        text += badgeHint.accessibilitySuffix
         return text
     }
 }
 
-/// "뱃지 획득 가능" 칩(골드 바탕 + 검정 글자)
-struct BadgeEligibleChip: View {
+/// 결과 행의 뱃지 안내: "뱃지 획득 가능" 칩 · "보유 중 · {등급}" · "단순 심볼 · 뱃지 제외"
+struct BadgeHintLabel: View {
+    let hint: BadgeHint
+
     var body: some View {
-        Text("뱃지 획득 가능")
-            .font(DSFont.chip)
-            .foregroundStyle(DSColor.onBadge)
-            .padding(.horizontal, Spacing.s - 1)
-            .padding(.vertical, Spacing.xxs)
-            .background(DSColor.gold, in: RoundedRectangle(cornerRadius: Radius.chip))
+        switch hint {
+        case .eligible:
+            Text("뱃지 획득 가능")
+                .font(DSFont.chip)
+                .foregroundStyle(DSColor.onBadge)
+                .padding(.horizontal, Spacing.s - 1)
+                .padding(.vertical, Spacing.xxs)
+                .background(DSColor.gold, in: RoundedRectangle(cornerRadius: Radius.chip))
+        case .owned(let tier):
+            HStack(spacing: Spacing.xs) {
+                BadgeDot(tier: tier, size: 10)
+                Text("보유 중 · \(tier.displayName)")
+            }
+            .font(.caption)
+            .foregroundStyle(DSColor.textSecondary)
+        case .excluded:
+            Text("단순 심볼 · 뱃지 제외")
+                .font(.caption)
+                .foregroundStyle(DSColor.textSecondary)
+        case .none:
+            EmptyView()
+        }
+    }
+}
+
+extension BadgeHint {
+    /// VoiceOver 뒤에 붙일 말(기획서 6장: "heart.fill, 유사도 92퍼센트, 뱃지 획득 가능")
+    var accessibilitySuffix: String {
+        switch self {
+        case .eligible: String(localized: ", 뱃지 획득 가능")
+        case .owned: String(localized: ", 보유 중")
+        case .excluded, .none: ""
+        }
     }
 }
 
@@ -130,7 +157,7 @@ private let previewMatches = [
 #Preview("라이트") {
     VStack(spacing: Spacing.s) {
         ForEach(Array(previewMatches.enumerated()), id: \.offset) { index, match in
-            SymbolResultRow(rank: index + 1, match: match, isBadgeEligible: match.similarity >= 90)
+            SymbolResultRow(rank: index + 1, match: match, badgeHint: BadgeHint.evaluate(match, owned: nil))
         }
     }
     .padding()
@@ -141,7 +168,7 @@ private let previewMatches = [
 #Preview("다크") {
     VStack(spacing: Spacing.s) {
         ForEach(Array(previewMatches.enumerated()), id: \.offset) { index, match in
-            SymbolResultRow(rank: index + 1, match: match, isBadgeEligible: match.similarity >= 90)
+            SymbolResultRow(rank: index + 1, match: match, badgeHint: BadgeHint.evaluate(match, owned: nil))
         }
     }
     .padding()
