@@ -118,6 +118,11 @@ private struct DeveloperMenu: View {
                 } label: {
                     Label("평가셋 수집", systemImage: "pencil.and.list.clipboard")
                 }
+                NavigationLink {
+                    EvaluationRunScreen(viewModel: container.makeEvaluationRunViewModel())
+                } label: {
+                    Label("평가 실행", systemImage: "chart.bar.doc.horizontal")
+                }
             }
         }
         .navigationTitle("개발 도구")

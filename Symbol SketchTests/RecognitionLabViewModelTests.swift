@@ -51,7 +51,8 @@ struct RecognitionLabViewModelTests {
     private let heart = SymbolMatch(name: "heart", variants: [], similarity: 90, score: 0.9)
 
     private func option(_ id: String, ready: Bool, search: FakeSearch) -> RecognitionEngineOption {
-        RecognitionEngineOption(id: id, title: id, detail: "", prepare: FakePrepare(ready: ready), search: search)
+        RecognitionEngineOption(id: id, title: id, detail: "", prepare: FakePrepare(ready: ready), search: search,
+                                scorer: NoScoring(), calibrator: ScoreCalibrator(sLow: 0, sHigh: 1))
     }
 
     @Test func 준비되지_않은_방식은_검색하지_않고_안내한다() async {
@@ -141,4 +142,9 @@ struct RecognitionLabViewModelTests {
         #expect(viewModel.selectedID == "b")
         #expect(second.callCount == 1)
     }
+}
+
+private struct NoScoring: SymbolScoring {
+    let engineID = "none"
+    func rawScores(for sketch: Sketch) async throws -> [ScoredSymbol] { [] }
 }

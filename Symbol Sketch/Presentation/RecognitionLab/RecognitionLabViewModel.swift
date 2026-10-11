@@ -15,6 +15,10 @@ struct RecognitionEngineOption: Identifiable {
     let detail: String
     let prepare: any PrepareSymbolIndexUseCase
     let search: any SearchSymbolsUseCase
+    /// 보정 전 원시 점수(평가 실행용)
+    let scorer: any SymbolScoring
+    /// 지금 쓰는 보정값
+    let calibrator: ScoreCalibrator
 }
 
 /// 개발용 인식 실험: 그리면 바로 Top 10을 보여 주고, 방식을 바꿔 가며 비교한다.

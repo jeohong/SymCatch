@@ -196,12 +196,16 @@ private struct PreviewSearch: SearchSymbolsUseCase {
 private func previewScreen() -> some View {
     NavigationStack {
         RecognitionLabScreen(viewModel: RecognitionLabViewModel(options: [
-            RecognitionEngineOption(id: "a", title: "A 윤곽", detail: "미리보기", prepare: PreviewPrepare(), search: PreviewSearch()),
-            RecognitionEngineOption(id: "b", title: "B 채움", detail: "미리보기", prepare: PreviewPrepare(), search: PreviewSearch()),
+            RecognitionEngineOption(id: "a", title: "A 윤곽", detail: "미리보기", prepare: PreviewPrepare(), search: PreviewSearch(), scorer: PreviewScoring(), calibrator: ScoreCalibrator(sLow: 0, sHigh: 1)),
+            RecognitionEngineOption(id: "b", title: "B 채움", detail: "미리보기", prepare: PreviewPrepare(), search: PreviewSearch(), scorer: PreviewScoring(), calibrator: ScoreCalibrator(sLow: 0, sHigh: 1)),
         ]))
     }
 }
 
 #Preview("라이트") { previewScreen().preferredColorScheme(.light) }
 #Preview("다크") { previewScreen().preferredColorScheme(.dark) }
+private struct PreviewScoring: SymbolScoring {
+    let engineID = "preview"
+    func rawScores(for sketch: Sketch) async throws -> [ScoredSymbol] { [] }
+}
 #endif

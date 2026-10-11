@@ -156,6 +156,19 @@ final class AppContainer {
         )
     }
 
+    #if DEBUG
+    /// 앱이 쓰는 방식(B 윤곽선)으로 평가한다. 화면을 나갔다 와도 결과가 남도록 하나만 만든다.
+    func makeEvaluationRunViewModel() -> EvaluationRunViewModel {
+        evaluationRun
+    }
+
+    private lazy var evaluationRun = EvaluationRunViewModel(
+        prepareIndex: appEngine.prepare,
+        runCalibration: DefaultRunCalibrationUseCase(samples: evaluationSamples, scorer: appEngine.scorer),
+        currentCalibrator: appEngine.calibrator
+    )
+    #endif
+
     /// 화면을 나갔다 들어와도 준비 진행 상황이 이어지도록 하나만 만들어 재사용한다.
     func makeRecognitionLabViewModel() -> RecognitionLabViewModel {
         recognitionLab
@@ -167,7 +180,7 @@ final class AppContainer {
 
     private func makeEngineOption(_ method: RecognitionMethod) -> RecognitionEngineOption {
         let builder: any SymbolIndexBuilding
-        let searcher: any SymbolSearching
+        let searcher: any SymbolSearching & SymbolScoring
         if let pipeline = method.embeddingPipeline {
             let store = SymbolIndexStore(fileURL: indexDirectory.appending(path: "\(method.rawValue).index"))
             builder = SymbolIndexBuilder(catalog: symbolCatalog, pipeline: pipeline, store: store)
@@ -182,7 +195,9 @@ final class AppContainer {
             title: method.title,
             detail: method.detail,
             prepare: DefaultPrepareSymbolIndexUseCase(builder: builder),
-            search: DefaultSearchSymbolsUseCase(searcher: searcher)
+            search: DefaultSearchSymbolsUseCase(searcher: searcher),
+            scorer: searcher,
+            calibrator: method.provisionalCalibrator
         )
     }
 }
