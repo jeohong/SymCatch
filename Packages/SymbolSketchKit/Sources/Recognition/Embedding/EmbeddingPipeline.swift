@@ -35,9 +35,12 @@ public struct EmbeddingPipeline: Sendable {
         return try embedder.embed(image)
     }
 
-    /// 이 OS에 없는 심볼이면 nil. 뱃지 판정용 복잡도도 함께 돌려준다.
-    func embedSymbol(named name: String) throws -> (vector: [Float], complexity: Float)? {
-        guard let bitmap = renderer.bitmap(forSymbolNamed: name), let image = bitmap.makeCGImage() else { return nil }
+    /// 심볼을 렌더링할 포인트 크기(`SymbolImageSource`에 넘김)
+    var symbolPointSize: CGFloat { renderer.renderPointSize }
+
+    /// `SymbolImageSource`가 만든 심볼 이미지를 임베딩한다. 뱃지 판정용 복잡도도 함께 돌려준다.
+    func embedSymbol(_ symbol: CGImage) throws -> (vector: [Float], complexity: Float)? {
+        guard let bitmap = renderer.bitmap(from: symbol), let image = bitmap.makeCGImage() else { return nil }
         let outline = symbolStyle == .outline ? bitmap : bitmap.outlined(thickness: Int(options.lineWidth.rounded()))
         return (try embedder.embed(image), SymbolComplexity.measure(outline: outline))
     }

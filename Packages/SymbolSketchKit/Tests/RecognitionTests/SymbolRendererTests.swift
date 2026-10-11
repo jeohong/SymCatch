@@ -8,6 +8,7 @@
 import Testing
 @testable import Recognition
 
+@MainActor
 struct SymbolRendererTests {
     let options = PreprocessingOptions(size: 96)
 

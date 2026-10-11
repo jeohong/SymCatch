@@ -14,9 +14,10 @@ import Foundation
 /// 그래서 무거운 동기 작업은 반드시 이 타입을 거쳐 실행한다.
 enum BlockingWork {
     /// 동기 작업 하나를 GCD 스레드에서 실행하고 결과를 기다린다.
-    static func run<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
+    /// - Parameter qos: 사용자가 기다리는 검색은 `.userInitiated`, 오래 걸리는 준비 작업은 `.utility`(화면 반응을 지키기 위함)
+    static func run<T: Sendable>(qos: DispatchQoS.QoSClass = .userInitiated, _ work: @escaping @Sendable () throws -> T) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
+            DispatchQueue.global(qos: qos).async {
                 continuation.resume(with: Result { try work() })
             }
         }
@@ -32,8 +33,9 @@ enum BlockingWork {
         _ transform: @escaping @Sendable (Int) throws -> T?
     ) async throws -> [T?] {
         let state = MapState<T>(count: count)
+        // 모든 코어를 쓰는 긴 작업이므로 낮은 우선순위로 돌려 화면이 버벅이지 않게 한다.
         return try await withTaskCancellationHandler {
-            try await run {
+            try await run(qos: .utility) {
                 DispatchQueue.concurrentPerform(iterations: count) { index in
                     guard !state.shouldStop else { return }
                     do {

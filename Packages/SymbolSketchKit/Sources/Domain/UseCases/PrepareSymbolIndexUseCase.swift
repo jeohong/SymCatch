@@ -8,6 +8,8 @@
 import Foundation
 
 public protocol PrepareSymbolIndexUseCase: Sendable {
+    /// 인덱스를 만들지 않고 지금 상태만 확인한다.
+    func status() async -> SymbolIndexStatus
     /// 인덱스가 준비돼 있으면 바로 끝나고, 아니면 만들면서 진행률(0...1)을 내보낸다.
     func execute() -> AsyncThrowingStream<Double, Error>
 }
@@ -17,6 +19,10 @@ public struct DefaultPrepareSymbolIndexUseCase: PrepareSymbolIndexUseCase {
 
     public init(builder: any SymbolIndexBuilding) {
         self.builder = builder
+    }
+
+    public func status() async -> SymbolIndexStatus {
+        await builder.status()
     }
 
     public func execute() -> AsyncThrowingStream<Double, Error> {

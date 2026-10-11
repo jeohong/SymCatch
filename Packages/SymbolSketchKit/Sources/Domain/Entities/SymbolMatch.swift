@@ -15,13 +15,16 @@ public struct SymbolMatch: Sendable, Hashable, Identifiable {
     public let variants: [String]
     /// 사람이 읽는 유사도 0...100
     public let similarity: Int
+    /// 보정 전 엔진 원점수(코사인 유사도 등). 보정값을 정하거나 디버깅할 때 쓴다.
+    public let score: Double
 
     public var id: String { name }
 
-    public init(name: String, variants: [String], similarity: Int) {
+    public init(name: String, variants: [String], similarity: Int, score: Double = 0) {
         self.name = name
         self.variants = variants
         self.similarity = similarity
+        self.score = score
     }
 }
 

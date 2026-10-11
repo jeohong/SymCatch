@@ -39,19 +39,33 @@ public struct GrayBitmap: Sendable, Hashable {
     }
 
     public var inkPixelCount: Int {
-        pixels.reduce(0) { $0 + ($1 < Self.inkThreshold ? 1 : 0) }
+        pixels.withUnsafeBufferPointer { buffer in
+            var count = 0
+            for value in buffer where value < Self.inkThreshold { count += 1 }
+            return count
+        }
     }
 
     /// 잉크 픽셀을 감싸는 사각형(픽셀 좌표, 위가 0). 잉크가 없으면 nil.
     public var inkBounds: (minX: Int, minY: Int, maxX: Int, maxY: Int)? {
-        var minX = width, minY = height, maxX = -1, maxY = -1
-        for y in 0..<height {
-            for x in 0..<width where pixels[y * width + x] < Self.inkThreshold {
-                minX = min(minX, x); maxX = max(maxX, x)
-                minY = min(minY, y); maxY = max(maxY, y)
+        let (width, height, threshold) = (width, height, Self.inkThreshold)
+        return pixels.withUnsafeBufferPointer { buffer in
+            var minX = width, minY = height, maxX = -1, maxY = -1
+            for y in 0..<height {
+                let row = y * width
+                var rowHasInk = false
+                for x in 0..<width where buffer[row + x] < threshold {
+                    if x < minX { minX = x }
+                    if x > maxX { maxX = x }
+                    rowHasInk = true
+                }
+                if rowHasInk {
+                    if y < minY { minY = y }
+                    maxY = y
+                }
             }
+            return maxX < 0 ? nil : (minX, minY, maxX, maxY)
         }
-        return maxX < 0 ? nil : (minX, minY, maxX, maxY)
     }
 }
 
@@ -78,12 +92,13 @@ extension GrayBitmap {
     init?(context: CGContext) {
         guard let data = context.data else { return nil }
         let width = context.width, height = context.height, bytesPerRow = context.bytesPerRow
-        let buffer = data.bindMemory(to: UInt8.self, capacity: bytesPerRow * height)
-        var pixels = [UInt8](repeating: 255, count: width * height)
-        for y in 0..<height {
-            for x in 0..<width {
-                pixels[y * width + x] = buffer[y * bytesPerRow + x]
+        let source = UnsafeRawPointer(data)
+        // 행 단위로 통째로 복사한다(행 끝에 여분 바이트가 있을 수 있어 bytesPerRow만큼 건너뛴다).
+        let pixels = [UInt8](unsafeUninitializedCapacity: width * height) { buffer, count in
+            for y in 0..<height {
+                memcpy(buffer.baseAddress! + y * width, source + y * bytesPerRow, width)
             }
+            count = width * height
         }
         self.init(width: width, height: height, pixels: pixels)
     }

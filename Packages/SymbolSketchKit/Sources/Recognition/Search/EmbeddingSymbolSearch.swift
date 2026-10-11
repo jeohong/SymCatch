@@ -35,7 +35,8 @@ public actor EmbeddingSymbolSearch: SymbolSearching {
             SymbolMatch(
                 name: group.representative.name,
                 variants: group.variants,
-                similarity: calibrator.percent(for: group.representative.score)
+                similarity: calibrator.percent(for: group.score),
+                score: group.score
             )
         }
     }

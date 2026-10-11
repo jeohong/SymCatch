@@ -28,6 +28,9 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
         self.osVersion = osVersion
     }
 
+    /// 한 번에 메인 스레드에서 만들 심볼 이미지 수
+    static let batchSize = 256
+
     public static var currentOSVersion: String {
         let version = ProcessInfo.processInfo.operatingSystemVersion
         return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
@@ -65,15 +68,25 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
         let names = try await catalog.allSymbols().map(\.name)
         progress(0)
 
-        // 렌더링·Vision은 스레드를 오래 붙잡으므로 GCD 스레드에서 병렬로 돌린다(BlockingWork 참고).
+        // 심볼 이미지 만들기(UIKit)는 메인 스레드에서, 전처리·Vision은 GCD 스레드에서 병렬로(BlockingWork 참고).
+        // 묶음 단위로 번갈아 돌려 메인 스레드를 오래 잡지 않는다.
         let pipeline = pipeline
         let total = names.count
-        let results = try await BlockingWork.concurrentMap(count: total, progress: { done in
-            if done % 50 == 0 || done == total { progress(Double(done) / Double(total)) }
-        }) { index in
-            try pipeline.embedSymbol(named: names[index])
+        var results: [(vector: [Float], complexity: Float)?] = []
+        results.reserveCapacity(total)
+        for start in stride(from: 0, to: total, by: Self.batchSize) {
+            let batch = Array(names[start..<min(start + Self.batchSize, total)])
+            let images = await SymbolImageSource.images(named: batch, pointSize: pipeline.symbolPointSize)
+            let part = try await BlockingWork.concurrentMap(count: images.count, progress: { done in
+                let overall = start + done
+                if overall % 50 == 0 || overall == total { progress(Double(overall) / Double(total)) }
+            }) { index -> (vector: [Float], complexity: Float)? in
+                guard let image = images[index] else { return nil }
+                return try pipeline.embedSymbol(image)
+            }
+            results.append(contentsOf: part)
+            try Task.checkCancellation()
         }
-        try Task.checkCancellation()
 
         var keptNames: [String] = [], complexity: [Float] = [], vectors: [Float] = []
         var dimension = 0

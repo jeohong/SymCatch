@@ -13,35 +13,38 @@ enum DistanceTransform {
     static func compute(_ bitmap: GrayBitmap) -> [Float] {
         let width = bitmap.width, height = bitmap.height
         let far = Float(width + height)
-        var distance = bitmap.pixels.map { $0 < GrayBitmap.inkThreshold ? 0 : far }
+        let threshold = GrayBitmap.inkThreshold
+        var distance = bitmap.pixels.map { $0 < threshold ? 0 : far }
         let diagonal: Float = 1.41421356
 
-        // 왼쪽 위 → 오른쪽 아래
-        for y in 0..<height {
-            for x in 0..<width {
-                let index = y * width + x
-                var value = distance[index]
-                if x > 0 { value = min(value, distance[index - 1] + 1) }
-                if y > 0 {
-                    value = min(value, distance[index - width] + 1)
-                    if x > 0 { value = min(value, distance[index - width - 1] + diagonal) }
-                    if x < width - 1 { value = min(value, distance[index - width + 1] + diagonal) }
+        distance.withUnsafeMutableBufferPointer { d in
+            // 왼쪽 위 → 오른쪽 아래
+            for y in 0..<height {
+                for x in 0..<width {
+                    let i = y * width + x
+                    var value = d[i]
+                    if x > 0 { value = min(value, d[i - 1] + 1) }
+                    if y > 0 {
+                        value = min(value, d[i - width] + 1)
+                        if x > 0 { value = min(value, d[i - width - 1] + diagonal) }
+                        if x < width - 1 { value = min(value, d[i - width + 1] + diagonal) }
+                    }
+                    d[i] = value
                 }
-                distance[index] = value
             }
-        }
-        // 오른쪽 아래 → 왼쪽 위
-        for y in stride(from: height - 1, through: 0, by: -1) {
-            for x in stride(from: width - 1, through: 0, by: -1) {
-                let index = y * width + x
-                var value = distance[index]
-                if x < width - 1 { value = min(value, distance[index + 1] + 1) }
-                if y < height - 1 {
-                    value = min(value, distance[index + width] + 1)
-                    if x < width - 1 { value = min(value, distance[index + width + 1] + diagonal) }
-                    if x > 0 { value = min(value, distance[index + width - 1] + diagonal) }
+            // 오른쪽 아래 → 왼쪽 위
+            for y in stride(from: height - 1, through: 0, by: -1) {
+                for x in stride(from: width - 1, through: 0, by: -1) {
+                    let i = y * width + x
+                    var value = d[i]
+                    if x < width - 1 { value = min(value, d[i + 1] + 1) }
+                    if y < height - 1 {
+                        value = min(value, d[i + width] + 1)
+                        if x < width - 1 { value = min(value, d[i + width + 1] + diagonal) }
+                        if x > 0 { value = min(value, d[i + width - 1] + diagonal) }
+                    }
+                    d[i] = value
                 }
-                distance[index] = value
             }
         }
         return distance

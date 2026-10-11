@@ -28,9 +28,11 @@ public actor ChamferSymbolSearch: SymbolSearching {
         let family: String
         /// 윤곽선 잉크 픽셀 위치(y × size + x)
         let inkIndices: [Int32]
-        /// 각 픽셀에서 윤곽선까지 거리
-        let distance: [Float]
+        /// 각 픽셀에서 윤곽선까지 거리 × 4(최대 255). 심볼 8,000개 기준 Float보다 메모리를 1/4로 줄인다.
+        let quarterDistance: [UInt8]
     }
+
+    public var isPrepared: Bool { templates != nil }
 
     public init(catalog: any SymbolCatalogRepository, calibrator: ScoreCalibrator, options: PreprocessingOptions = PreprocessingOptions(size: 48)) {
         self.catalog = catalog
@@ -40,8 +42,9 @@ public actor ChamferSymbolSearch: SymbolSearching {
     }
 
     /// 모든 심볼의 윤곽선·거리 지도를 미리 만든다.
-    public func prepare() async throws {
-        _ = try await loadTemplates()
+    /// - Parameter progress: 진행률 0...1(여러 스레드에서 불릴 수 있음)
+    public func prepare(progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
+        _ = try await loadTemplates(progress: progress)
     }
 
     public func search(sketch: Sketch, limit: Int) async throws -> [SymbolMatch] {
@@ -50,7 +53,8 @@ public actor ChamferSymbolSearch: SymbolSearching {
             SymbolMatch(
                 name: group.representative.name,
                 variants: group.variants,
-                similarity: calibrator.percent(for: group.representative.score)
+                similarity: calibrator.percent(for: group.score),
+                score: group.score
             )
         }
     }
@@ -64,32 +68,50 @@ public actor ChamferSymbolSearch: SymbolSearching {
         let side = Float(options.size)
 
         return templates.map { template in
-            let forward = Self.meanDistance(at: sketchInk, in: template.distance)
+            let forward = Self.meanQuarterDistance(at: sketchInk, in: template.quarterDistance)
             let backward = Self.meanDistance(at: template.inkIndices, in: sketchDistance)
             let score = -(forward + backward) / 2 / side
             return ScoredSymbol(name: template.name, family: template.family, score: Double(score))
         }
     }
 
-    private func loadTemplates() async throws -> [Template] {
+    private func loadTemplates(progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> [Template] {
         if let templates { return templates }
         let names = try await catalog.allSymbols().map(\.name)
         let renderer = SymbolRenderer(options: options, style: .outline)
+        let total = names.count
 
-        // 렌더링은 스레드를 오래 붙잡으므로 GCD 스레드에서 병렬로 돌린다(BlockingWork 참고).
-        let built = try await BlockingWork.concurrentMap(count: names.count) { index -> Template? in
-            let name = names[index]
-            guard let bitmap = renderer.bitmap(forSymbolNamed: name) else { return nil }
-            let ink = Self.inkIndices(of: bitmap)
-            guard !ink.isEmpty else { return nil }
-            return Template(name: name, family: VariantGrouper.family(of: name), inkIndices: ink, distance: DistanceTransform.compute(bitmap))
-        }.compactMap { $0 }
+        // 심볼 이미지 만들기(UIKit)는 메인 스레드에서, 윤곽선·거리 지도는 GCD 스레드에서 병렬로(BlockingWork 참고).
+        var built: [Template] = []
+        for start in stride(from: 0, to: total, by: SymbolIndexBuilder.batchSize) {
+            let batch = Array(names[start..<min(start + SymbolIndexBuilder.batchSize, total)])
+            let images = await SymbolImageSource.images(named: batch, pointSize: renderer.renderPointSize)
+            let part = try await BlockingWork.concurrentMap(count: images.count, progress: { done in
+                let overall = start + done
+                if overall % 50 == 0 || overall == total { progress(Double(overall) / Double(total)) }
+            }) { index -> Template? in
+                guard let image = images[index], let bitmap = renderer.bitmap(from: image) else { return nil }
+                let ink = Self.inkIndices(of: bitmap)
+                guard !ink.isEmpty else { return nil }
+                let quarter = DistanceTransform.compute(bitmap).map { UInt8(min(255, ($0 * 4).rounded())) }
+                return Template(name: batch[index], family: VariantGrouper.family(of: batch[index]), inkIndices: ink, quarterDistance: quarter)
+            }
+            built.append(contentsOf: part.compactMap { $0 })
+            try Task.checkCancellation()
+        }
         templates = built
         return built
     }
 
     private static func inkIndices(of bitmap: GrayBitmap) -> [Int32] {
         bitmap.pixels.indices.compactMap { bitmap.pixels[$0] < GrayBitmap.inkThreshold ? Int32($0) : nil }
+    }
+
+    private static func meanQuarterDistance(at indices: [Int32], in quarterDistance: [UInt8]) -> Float {
+        guard !indices.isEmpty else { return 0 }
+        var sum = 0
+        for index in indices { sum += Int(quarterDistance[Int(index)]) }
+        return Float(sum) / 4 / Float(indices.count)
     }
 
     private static func meanDistance(at indices: [Int32], in distance: [Float]) -> Float {
