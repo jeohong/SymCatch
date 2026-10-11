@@ -47,17 +47,24 @@ public struct SymbolIndexStore: Sendable {
         try data.write(to: fileURL, options: .atomic)
     }
 
-    public func load() throws -> SymbolIndex {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { throw SymbolIndexStoreError.notFound }
-        var reader = BinaryReader(data: try Data(contentsOf: fileURL, options: .mappedIfSafe))
+    /// 인덱스를 다시 만들어야 하는지 판단할 때 쓰는 머리 정보.
+    public struct Header: Sendable, Hashable {
+        public let engineID: String
+        public let osVersion: String
+        public let count: Int
+        public let dimension: Int
+    }
 
-        guard try reader.read(count: 4) == Self.magic else { throw SymbolIndexStoreError.corrupted }
-        let version: UInt32 = try reader.read()
-        guard version == Self.formatVersion else { throw SymbolIndexStoreError.unsupportedFormat(version) }
-        let engineID = try reader.readString()
-        let osVersion = try reader.readString()
-        let count = Int(try reader.read() as UInt32)
-        let dimension = Int(try reader.read() as UInt32)
+    /// 벡터는 읽지 않고 머리 정보만 읽는다.
+    public func loadHeader() throws -> Header {
+        var reader = try openReader()
+        return try Self.readHeader(&reader)
+    }
+
+    public func load() throws -> SymbolIndex {
+        var reader = try openReader()
+        let header = try Self.readHeader(&reader)
+        let (engineID, osVersion, count, dimension) = (header.engineID, header.osVersion, header.count, header.dimension)
 
         let names = try (0..<count).map { _ in try reader.readString() }
         let complexity = try (0..<count).map { _ in Float(bitPattern: try reader.read()) }
@@ -73,6 +80,23 @@ public struct SymbolIndexStore: Sendable {
     public func delete() throws {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         try FileManager.default.removeItem(at: fileURL)
+    }
+
+    private func openReader() throws -> BinaryReader {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { throw SymbolIndexStoreError.notFound }
+        return BinaryReader(data: try Data(contentsOf: fileURL, options: .mappedIfSafe))
+    }
+
+    private static func readHeader(_ reader: inout BinaryReader) throws -> Header {
+        guard try reader.read(count: 4) == magic else { throw SymbolIndexStoreError.corrupted }
+        let version: UInt32 = try reader.read()
+        guard version == formatVersion else { throw SymbolIndexStoreError.unsupportedFormat(version) }
+        return Header(
+            engineID: try reader.readString(),
+            osVersion: try reader.readString(),
+            count: Int(try reader.read() as UInt32),
+            dimension: Int(try reader.read() as UInt32)
+        )
     }
 }
 
