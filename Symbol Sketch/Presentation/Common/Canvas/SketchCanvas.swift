@@ -49,7 +49,7 @@ final class SketchCanvasController {
     fileprivate static func makeTool(_ tool: Tool, canvasWidth: CGFloat) -> PKTool {
         switch tool {
         case .pen:
-            PKInkingTool(.monoline, color: .label, width: max(3.5, canvasWidth * 0.017))
+            PKInkingTool(.monoline, color: .canvasInkForPencilKit, width: max(3.5, canvasWidth * 0.017))
         case .eraser:
             PKEraserTool(.vector)
         }
