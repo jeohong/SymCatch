@@ -105,6 +105,7 @@ private actor ListSamples: EvaluationSampleRepository {
     func all() async throws -> [EvaluationSample] { samples }
     func delete(id: UUID) async throws {}
     func exportArchive() async throws -> URL { URL(fileURLWithPath: "/dev/null") }
+    func importArchive(from url: URL) async throws -> Int { 0 }
 }
 
 /// 정답 심볼에 0.9, 나머지에 0.4를 주는 가짜 엔진
@@ -115,7 +116,9 @@ private struct FakeScorer: SymbolScoring {
         // 그림의 첫 점 x로 정답을 구분한다(테스트용).
         // 그림의 첫 점 x(0.1, 0.2, …)로 정답 순번을 정한다(테스트용).
         let index = Int(((sketch.strokes.first?.first?.x ?? 0) * 10).rounded()) - 1
-        return names.enumerated().map { ScoredSymbol(name: $0.element, family: $0.element, score: $0.offset == index ? 0.9 : 0.4) }
+        return names.enumerated().map {
+            ScoredSymbol(name: $0.element, family: $0.element, score: $0.offset == index ? 0.9 : 0.4, hubness: $0.element == "bolt" ? 0.8 : 0.3)
+        }
     }
 }
 
@@ -137,6 +140,12 @@ struct RunCalibrationUseCaseTests {
         let report = try #require(run.report(highPercentile: 0.5))
         #expect(report.holdout.top1 == 1)
         #expect(report.recommended == ScoreCalibrator(sLow: 0.4, sHigh: 0.9))
+
+        #expect(run.supportsCorrection)
+        let corrected = try #require(run.report(mode: .hubnessCorrected, highPercentile: 0.5))
+        #expect(corrected.holdout.top1 == 1)
+        // 보정 점수: 정답 2×0.9 − r(그림) − 0.3, 오답은 더 낮다.
+        #expect(corrected.recommended.sHigh > corrected.recommended.sLow)
     }
 }
 

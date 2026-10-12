@@ -39,11 +39,20 @@ public struct ScoredSymbol: Sendable, Hashable {
     public let score: Double
     /// 심볼 모양 복잡도(0...1). 엔진이 알 때만(단순 심볼 뱃지 제외 기준을 정할 때 쓴다).
     public let complexity: Double?
+    /// 이 심볼이 다른 심볼들과 평소에 얼마나 닮는지(가까운 이웃과의 평균 점수). 엔진이 알 때만.
+    /// 값이 크면 어떤 그림에도 높게 나오는 "만능 닮은꼴"이다(`HubnessCorrection`).
+    public let hubness: Double?
 
-    public init(name: String, family: String, score: Double, complexity: Double? = nil) {
+    public init(name: String, family: String, score: Double, complexity: Double? = nil, hubness: Double? = nil) {
         self.name = name
         self.family = family
         self.score = score
         self.complexity = complexity
+        self.hubness = hubness
+    }
+
+    /// 점수만 바꾼 사본
+    public func withScore(_ score: Double) -> ScoredSymbol {
+        ScoredSymbol(name: name, family: family, score: score, complexity: complexity, hubness: hubness)
     }
 }
