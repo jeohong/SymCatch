@@ -141,6 +141,13 @@ struct DrawViewModelTests {
             await Task.yield()
         }
         #expect(viewModel.preparation == .ready)
+        #expect(viewModel.preparationSeconds != nil)    // DEBUG: 준비 시간을 잰다
+    }
+
+    @Test func 인덱스가_이미_있으면_준비_시간이_없다() async {
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results([])))
+        await viewModel.start()
+        #expect(viewModel.preparationSeconds == nil)
     }
 
     @Test func 준비에_실패하면_오류를_보여주고_다시_준비할_수_있다() async {

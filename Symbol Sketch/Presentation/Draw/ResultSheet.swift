@@ -91,6 +91,15 @@ struct ResultSheet: View {
             SkeletonRows()
         default:
             if viewModel.matches.isEmpty {
+                #if DEBUG
+                if let seconds = viewModel.preparationSeconds {
+                    // 개발용: 실기기 준비 시간 측정(출시 빌드에는 없음)
+                    Text(verbatim: "[DEBUG] 심볼 준비 시간 \(String(format: "%.1f", seconds))초")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(DSColor.danger)
+                        .accessibilityIdentifier("debugPreparationSeconds")
+                }
+                #endif
                 message(String(localized: "그림을 그리면 비슷한 심볼이\n여기에 나타나요"), detail: nil)
             } else if viewModel.isSheetExpanded {
                 expandedList
@@ -250,3 +259,4 @@ struct InvertedButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
+

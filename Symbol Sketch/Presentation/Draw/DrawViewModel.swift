@@ -32,6 +32,10 @@ final class DrawViewModel {
     }
 
     private(set) var preparation: Preparation = .checking
+    #if DEBUG
+    /// 개발용: 이번 실행에서 심볼 준비에 걸린 시간(초). 인덱스를 새로 만들 때만 채워진다.
+    private(set) var preparationSeconds: Double?
+    #endif
     private(set) var phase: Phase = .idle
     private(set) var matches: [SymbolMatch] = []
     /// 결과 시트를 펼쳤는지(Top 3 ↔ Top 10)
@@ -119,11 +123,15 @@ final class DrawViewModel {
     private func beginPreparation() {
         guard preparationTask == nil else { return }
         preparation = .preparing(progress: 0)
+        let startedAt = Date.now
         preparationTask = Task {
             do {
                 for try await progress in prepareIndex.execute() {
                     preparation = .preparing(progress: progress)
                 }
+                #if DEBUG
+                preparationSeconds = Date.now.timeIntervalSince(startedAt)
+                #endif
                 preparation = .ready
                 if !sketch.isEmpty { scheduleSearch(after: .zero) }
             } catch {
