@@ -53,7 +53,7 @@ struct EmbeddingSymbolSearchTests {
     }
 
     @Test func 인덱스가_없으면_indexNotReady() async {
-        let search = EmbeddingSymbolSearch(pipeline: pipeline, store: temporaryIndexStore(), calibrator: RecognitionMethod.visionOutline.provisionalCalibrator)
+        let search = EmbeddingSymbolSearch(pipeline: pipeline, store: temporaryIndexStore(), calibrator: RecognitionMethod.visionOutline.calibrator)
         await #expect(throws: SymbolSearchError.indexNotReady) {
             try await search.search(sketch: TestSketches.circle, limit: 10)
         }
@@ -62,7 +62,7 @@ struct EmbeddingSymbolSearchTests {
     @Test func 검색_결과는_변형을_묶고_0에서_100_사이() async throws {
         let store = temporaryIndexStore()
         for try await _ in SymbolIndexBuilder(catalog: catalog, pipeline: pipeline, store: store, osVersion: "27.1").build() {}
-        let search = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: RecognitionMethod.visionOutline.provisionalCalibrator)
+        let search = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: RecognitionMethod.visionOutline.calibrator)
 
         let results = try await search.search(sketch: TestSketches.circle, limit: 10)
 
@@ -70,6 +70,20 @@ struct EmbeddingSymbolSearchTests {
         #expect(results.filter { VariantGrouper.family(of: $0.name) == "circle" }.count == 1)
         #expect(results.allSatisfy { (0...100).contains($0.similarity) })
         #expect(results.map(\.similarity) == results.map(\.similarity).sorted(by: >))
+    }
+
+    @Test func 닮은꼴_보정_세기를_주면_보정한_점수로_찾는다() async throws {
+        let store = temporaryIndexStore()
+        for try await _ in SymbolIndexBuilder(catalog: catalog, pipeline: pipeline, store: store, osVersion: "27.1").build() {}
+        let calibrator = ScoreCalibrator(sLow: -1, sHigh: 1)
+        let plain = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: calibrator)
+        let corrected = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: calibrator, hubnessWeight: 0.25)
+
+        let raw = try await plain.rawScores(for: TestSketches.circle)
+        #expect(raw.allSatisfy { $0.hubness != nil })                   // 인덱스에 닮은꼴 정도가 들어 있다
+        let expected = VariantGrouper.group(HubnessCorrection.corrected(raw, weight: 0.25), limit: 10).map(\.score)
+        #expect(try await corrected.search(sketch: TestSketches.circle, limit: 10).map(\.score) == expected)
+        #expect(try await plain.search(sketch: TestSketches.circle, limit: 10).map(\.score) == VariantGrouper.group(raw, limit: 10).map(\.score))
     }
 
     /// 심볼 수가 CPU 코어 수보다 많아도 멈추지 않는다.

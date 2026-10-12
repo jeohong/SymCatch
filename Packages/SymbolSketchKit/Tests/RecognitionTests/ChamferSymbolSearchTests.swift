@@ -26,7 +26,7 @@ struct ChamferSymbolSearchTests {
     private let catalog = StubSymbolCatalog(names: ["circle", "triangle", "minus", "square", "circle.fill"])
 
     private func makeSearch() -> ChamferSymbolSearch {
-        ChamferSymbolSearch(catalog: catalog, calibrator: RecognitionMethod.chamfer.provisionalCalibrator)
+        ChamferSymbolSearch(catalog: catalog, calibrator: RecognitionMethod.chamfer.calibrator)
     }
 
     @Test(arguments: [

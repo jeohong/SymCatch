@@ -18,19 +18,22 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
     private let pipeline: EmbeddingPipeline
     private let store: SymbolIndexStore
     private let calibrator: ScoreCalibrator
+    /// 만능 닮은꼴 보정 세기(0이면 원래 코사인 그대로)
+    private let hubnessWeight: Double
     private var loaded: (index: SymbolIndex, engine: VectorSearchEngine, families: [String])?
 
     public nonisolated let engineID: String
 
-    public init(pipeline: EmbeddingPipeline, store: SymbolIndexStore, calibrator: ScoreCalibrator) {
+    public init(pipeline: EmbeddingPipeline, store: SymbolIndexStore, calibrator: ScoreCalibrator, hubnessWeight: Double = 0) {
         self.pipeline = pipeline
         self.store = store
         self.calibrator = calibrator
+        self.hubnessWeight = hubnessWeight
         self.engineID = pipeline.engineID
     }
 
     public func search(sketch: Sketch, limit: Int) async throws -> [SymbolMatch] {
-        let scored = try await rawScores(for: sketch)
+        let scored = HubnessCorrection.corrected(try await rawScores(for: sketch), weight: hubnessWeight)
         return VariantGrouper.group(scored, limit: limit).map { group in
             SymbolMatch(
                 name: group.representative.name,

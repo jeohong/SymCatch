@@ -16,14 +16,27 @@ public enum RecognitionMethod: String, Sendable, CaseIterable {
     /// B. Vision 특징 벡터, 심볼을 윤곽선으로 바꿔 비교
     case visionOutline
 
-    /// 평가셋으로 정하기 전의 임시 보정값. M0 평가 리포트가 나오면 실제 값으로 바꾼다.
-    public var provisionalCalibrator: ScoreCalibrator {
+    /// 유사도 % 보정값(기획서 9.5).
+    /// - B 윤곽선(앱이 쓰는 방식): 실기기 평가셋 102장으로 정한 값(계획서 7장 결정 14, 2026-10-12).
+    ///   닮은꼴 보정 점수 기준이므로 `hubnessWeight`와 짝을 이룬다. 둘 중 하나를 바꾸면 평가 실행으로 다시 정한다.
+    /// - A·B 채움: 비교용으로만 남긴 방식이라 임시 값.
+    public var calibrator: ScoreCalibrator {
         switch self {
         case .chamfer:
             // 점수 = −평균 거리 ÷ 한 변. 평균 거리가 한 변의 15%면 0%, 2%면 100%.
             ScoreCalibrator(sLow: -0.15, sHigh: -0.02)
-        case .visionFilled, .visionOutline:
+        case .visionFilled:
             ScoreCalibrator(sLow: 0.5, sHigh: 0.95)
+        case .visionOutline:
+            ScoreCalibrator(sLow: 0.3146, sHigh: 0.6805)
+        }
+    }
+
+    /// 만능 닮은꼴 보정 세기(`HubnessCorrection`). 0이면 보정하지 않는다.
+    public var hubnessWeight: Double {
+        switch self {
+        case .chamfer, .visionFilled: 0
+        case .visionOutline: 0.25
         }
     }
 
