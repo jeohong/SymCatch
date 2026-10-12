@@ -43,7 +43,7 @@ struct BadgeView: View {
     private var ring: AnyShapeStyle {
         switch style {
         case .tier(let tier):
-            AnyShapeStyle(Self.gradient(DSColor.tier(tier), DSColor.tierHighlight(tier)))
+            AnyShapeStyle(DSColor.tierRing(tier))
         case .achievement:
             AnyShapeStyle(Self.gradient(DSColor.accent, DSColor.accentHi))
         case .locked:
@@ -65,7 +65,7 @@ struct BadgeDot: View {
 
     var body: some View {
         Circle()
-            .strokeBorder(DSColor.tier(tier), lineWidth: max(2, size * 0.22))
+            .strokeBorder(DSColor.tierRing(tier), lineWidth: max(2, size * 0.22))
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
@@ -74,7 +74,12 @@ struct BadgeDot: View {
 /// 등급 칩: 등급색 바탕 + 검정 글자(gold는 글자색으로 쓰지 않는다)
 struct TierChip: View {
     let text: String
-    var background: Color
+    let background: AnyShapeStyle
+
+    init(text: String, background: some ShapeStyle) {
+        self.text = text
+        self.background = AnyShapeStyle(background)
+    }
 
     var body: some View {
         Text(text)
@@ -93,12 +98,13 @@ private struct BadgeViewPreview: View {
                 BadgeView(systemImage: "heart", style: .tier(.bronze))
                 BadgeView(systemImage: "star", style: .tier(.silver))
                 BadgeView(systemImage: "bolt", style: .tier(.gold))
+                BadgeView(systemImage: "crown", style: .tier(.legendary))
                 BadgeView(systemImage: "cloud", style: .locked)
             }
             HStack(spacing: Spacing.m) {
                 BadgeView(systemImage: "target", style: .achievement, size: 104, ringWidth: 6)
-                BadgeDot(tier: .gold, size: 18)
-                TierChip(text: "새 뱃지", background: DSColor.gold)
+                BadgeDot(tier: .legendary, size: 18)
+                TierChip(text: "레전더리 뱃지", background: DSColor.tierFill(.legendary))
             }
         }
         .padding()

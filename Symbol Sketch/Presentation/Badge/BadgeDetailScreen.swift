@@ -39,7 +39,7 @@ struct BadgeDetailScreen: View {
             BadgeView(systemImage: viewModel.symbolName, style: viewModel.badge.map { .tier($0.tier) } ?? .locked, size: 136, ringWidth: 7)
                 .shadow(color: .black.opacity(0.14), radius: 16, y: 12)
             if let badge = viewModel.badge {
-                TierChip(text: String(localized: "\(badge.tier.displayName) 뱃지"), background: DSColor.tier(badge.tier))
+                TierChip(text: String(localized: "\(badge.tier.displayName) 뱃지"), background: DSColor.tierFill(badge.tier))
             } else {
                 Text("미획득")
                     .font(DSFont.chip)

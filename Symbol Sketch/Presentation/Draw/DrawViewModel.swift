@@ -257,8 +257,8 @@ final class DrawViewModel {
                 // 저장에 실패해도 상세 화면은 그대로 쓸 수 있다. 다음 선택 때 다시 저장된다.
             }
             await refreshProgress()
-            // 목표 심볼을 골드로 달성하면 목표를 자동으로 내린다.
-            if let target = challengeTarget, badges[target]?.tier == .gold {
+            // 목표 심볼을 최고 등급(레전더리)으로 달성하면 목표를 자동으로 내린다.
+            if let target = challengeTarget, badges[target].map({ $0.tier.next == nil }) == true {
                 challengeTarget = nil
             }
         }

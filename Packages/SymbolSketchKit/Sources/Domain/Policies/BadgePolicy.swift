@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// 정수 유사도 → 뱃지 등급(기획서 10.3). 85 ≤ % < 90 브론즈, 90 ≤ % < 95 실버, % ≥ 95 골드.
+/// 정수 유사도 → 뱃지 등급(기획서 10.3). 85 ≤ % < 90 브론즈, 90 ≤ % < 95 실버, 95 ≤ % < 100 골드, 100 레전더리.
 public enum BadgeTierPolicy {
     /// 뱃지를 받는 최소 유사도(브론즈 기준)
     public static let threshold = BadgeTier.bronze.minimumSimilarity

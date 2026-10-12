@@ -25,7 +25,7 @@ struct BadgeCard: View {
             case let .badge(symbolName, tier, isUpgrade, similarity, sketch, date):
                 BadgeView(systemImage: symbolName, style: .tier(tier), size: 104, ringWidth: 6)
                     .shadow(color: .black.opacity(0.18), radius: 14, y: 10)
-                TierChip(text: isUpgrade ? String(localized: "승급") : String(localized: "새 뱃지"), background: DSColor.tier(tier))
+                TierChip(text: isUpgrade ? String(localized: "승급") : String(localized: "새 뱃지"), background: DSColor.tierFill(tier))
                 Text(isUpgrade ? "\(tier.displayName)로 승급했어요" : "\(tier.displayName) 뱃지를 얻었어요")
                     .font(.title2.bold())
                     .foregroundStyle(DSColor.textPrimary)

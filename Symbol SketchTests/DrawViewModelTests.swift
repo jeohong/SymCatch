@@ -365,18 +365,18 @@ struct DrawViewModelTests {
         #expect(viewModel.challengeTarget == nil)
     }
 
-    @Test func 목표를_골드로_달성하면_목표가_내려간다() async {
-        let silver = SymbolBadge(symbolName: "s1", tier: .silver, bestSimilarity: 96, bestSketch: drawn, earnedAt: .now)
+    @Test func 목표를_최고_등급으로_달성하면_목표가_내려간다() async {
+        let silver = SymbolBadge(symbolName: "s1", tier: .gold, bestSimilarity: 96, bestSketch: drawn, earnedAt: .now)
         var gold = silver
-        gold.tier = .gold
+        gold.tier = .legendary
         let badges = MutableBadges(["s1": silver])
         let viewModel = DrawViewModel(prepareIndex: StubPrepare(ready: true), searchSymbols: StubSearch(outcome: .results(results)),
                                       selectSymbol: StubSelect(), fetchRecent: StubRecent(), fetchBadges: badges, navigator: nil, debounce: .zero)
         await viewModel.refreshProgress()
         viewModel.startChallenge(symbolName: "s1")
-        #expect(viewModel.challengeBadge?.tier == .silver)
+        #expect(viewModel.challengeBadge?.tier == .gold)
 
-        // 실버 그대로면 목표 유지
+        // 골드 그대로면 목표 유지(골드 위에 레전더리가 있다)
         viewModel.select(results[0])
         await viewModel.pendingSelection?.value
         #expect(viewModel.challengeTarget == "s1")

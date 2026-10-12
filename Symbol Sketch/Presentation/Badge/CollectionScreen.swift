@@ -90,6 +90,7 @@ struct CollectionScreen: View {
 private struct SummaryCard: View {
     let summary: CollectionSummary
     let progress: Double
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
@@ -105,29 +106,44 @@ private struct SummaryCard: View {
             ProgressView(value: progress)
                 .progressViewStyle(BarProgressStyle())
                 .accessibilityHidden(true)
-            HStack(spacing: Spacing.s) {
-                ForEach([BadgeTier.gold, .silver, .bronze], id: \.self) { tier in
-                    HStack(spacing: Spacing.s) {
-                        BadgeDot(tier: tier, size: 18)
-                        Text(tier.displayName)
-                            .font(.footnote)
-                            .foregroundStyle(DSColor.textSecondary)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                        Text("\(summary.count(of: tier))")
-                            .font(.headline.monospacedDigit())
-                            .foregroundStyle(DSColor.textPrimary)
-                    }
-                    .padding(.vertical, Spacing.s)
-                    .padding(.horizontal, Spacing.s + Spacing.xxs)
-                    // 디자인은 bg2지만 다크에서 카드(cell)와 같은 색이라 칩이 사라져 fill을 쓴다.
-                    .background(DSColor.fill, in: RoundedRectangle(cornerRadius: Radius.button))
-                    .accessibilityElement(children: .combine)
+            // 등급 4개를 2×2로 둔다. 한 줄에 3~4개를 두면 좁은 화면(iPhone 13 등)에서 이름이 "브..."로 잘렸다.
+            // 가장 큰 글자 크기에서는 한 줄에 하나씩.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.s),
+                                     count: dynamicTypeSize.isAccessibilitySize ? 1 : 2),
+                      spacing: Spacing.s) {
+                ForEach(BadgeTier.allCases.reversed(), id: \.self) { tier in
+                    TierCountChip(tier: tier, count: summary.count(of: tier))
                 }
             }
         }
         .padding(Spacing.l)
         .background(DSColor.cell, in: RoundedRectangle(cornerRadius: Radius.card))
+    }
+}
+
+/// 등급별 개수 칩: 등급 점 · 이름 · 개수. 이름은 줄이지 않고, 넘치면 줄을 바꾼다.
+private struct TierCountChip: View {
+    let tier: BadgeTier
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: Spacing.s) {
+            BadgeDot(tier: tier, size: 18)
+            Text(tier.displayName)
+                .font(.footnote)
+                .foregroundStyle(DSColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: Spacing.xs)
+            Text("\(count)")
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(DSColor.textPrimary)
+        }
+        .padding(.vertical, Spacing.s)
+        .padding(.horizontal, Spacing.s + Spacing.xxs)
+        .frame(maxWidth: .infinity, minHeight: Metrics.minTapTarget)
+        // 디자인은 bg2지만 다크에서 카드(cell)와 같은 색이라 칩이 사라져 fill을 쓴다.
+        .background(DSColor.fill, in: RoundedRectangle(cornerRadius: Radius.button))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -259,6 +275,7 @@ private struct PreviewCollection: FetchCollectionUseCase {
     func execute() async throws -> CollectionSummary {
         let badges = [
             SymbolBadge(symbolName: "heart", tier: .gold, bestSimilarity: 99, bestSketch: .empty, earnedAt: .now),
+            SymbolBadge(symbolName: "sun.max", tier: .legendary, bestSimilarity: 100, bestSketch: .empty, earnedAt: .now),
             SymbolBadge(symbolName: "cloud.sun", tier: .silver, bestSimilarity: 96, bestSketch: .empty, earnedAt: .now),
         ]
         return CollectionSummary(

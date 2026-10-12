@@ -15,6 +15,7 @@ extension BadgeTier {
         case .bronze: String(localized: "브론즈")
         case .silver: String(localized: "실버")
         case .gold: String(localized: "골드")
+        case .legendary: String(localized: "레전더리")
         }
     }
 }

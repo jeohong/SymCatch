@@ -100,7 +100,8 @@ struct BadgeDetailViewModelTests {
         (nil, "유사도 85% 이상이면 브론즈 뱃지를 얻어요", true),
         (BadgeTier.bronze, "90% 이상이면 실버로 승급해요", true),
         (.silver, "95% 이상이면 골드로 승급해요", true),
-        (.gold, "최고 등급을 달성했어요", false),
+        (.gold, "100%를 달성하면 레전더리로 승급해요", true),
+        (.legendary, "최고 등급을 달성했어요", false),
     ] as [(BadgeTier?, String, Bool)])
     func 등급별_안내와_도전_가능_여부(tier: BadgeTier?, goal: String, canChallenge: Bool) async {
         let viewModel = makeViewModel("heart", badge: tier.map { badge("heart", $0) })

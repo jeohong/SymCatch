@@ -38,11 +38,14 @@ final class BadgeDetailViewModel {
             return String(localized: "유사도 \(BadgeTier.bronze.minimumSimilarity)% 이상이면 브론즈 뱃지를 얻어요")
         }
         guard let next = tier.next else { return String(localized: "최고 등급을 달성했어요") }
+        if next.minimumSimilarity >= 100 {
+            return String(localized: "\(next.minimumSimilarity)%를 달성하면 \(next.displayName)로 승급해요")
+        }
         return String(localized: "\(next.minimumSimilarity)% 이상이면 \(next.displayName)로 승급해요")
     }
 
-    /// 골드면 더 도전할 등급이 없다.
-    var canChallenge: Bool { badge?.tier != .gold }
+    /// 최고 등급(레전더리)이면 더 도전할 등급이 없다.
+    var canChallenge: Bool { badge.map { $0.tier.next != nil } ?? true }
 
     var challengeTitle: String {
         badge == nil ? String(localized: "그려서 도전하기") : String(localized: "더 높은 등급에 도전")

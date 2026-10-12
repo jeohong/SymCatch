@@ -12,22 +12,25 @@ public enum BadgeTier: Int, Sendable, Hashable, Codable, Comparable, CaseIterabl
     case bronze
     case silver
     case gold
+    /// 100%(2026-10-12 추가). 저장값(rawValue 3)이 기존 등급 뒤라 이전 기록과 호환된다.
+    case legendary
 
     public static func < (lhs: BadgeTier, rhs: BadgeTier) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 
     /// 이 등급이 되는 최소 유사도(%). 기준 숫자는 여기 한 곳에만 둔다(화면 문구도 이 값을 쓴다).
-    /// 2026-10-12: 90/95/98 → 85/90/95(계획서 7장 결정 15)
+    /// 2026-10-12: 90/95/98 → 85/90/95(계획서 7장 결정 15), 100 레전더리 추가(결정 17)
     public var minimumSimilarity: Int {
         switch self {
         case .bronze: 85
         case .silver: 90
         case .gold: 95
+        case .legendary: 100
         }
     }
 
-    /// 다음 등급(골드면 nil)
+    /// 다음 등급(최고 등급이면 nil)
     public var next: BadgeTier? {
         BadgeTier(rawValue: rawValue + 1)
     }

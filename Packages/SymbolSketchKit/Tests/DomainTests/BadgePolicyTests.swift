@@ -12,14 +12,14 @@ import Testing
 struct BadgeTierPolicyTests {
     @Test func 기준_숫자와_다음_등급() {
         #expect(BadgeTierPolicy.threshold == 85)
-        #expect(BadgeTier.allCases.map(\.minimumSimilarity) == [85, 90, 95])
-        #expect(BadgeTier.bronze.next == .silver && BadgeTier.gold.next == nil)
+        #expect(BadgeTier.allCases.map(\.minimumSimilarity) == [85, 90, 95, 100])
+        #expect(BadgeTier.bronze.next == .silver && BadgeTier.gold.next == .legendary && BadgeTier.legendary.next == nil)
     }
 
     @Test(arguments: [
         (84, nil), (85, BadgeTier.bronze), (89, .bronze),
         (90, .silver), (94, .silver),
-        (95, .gold), (100, .gold),
+        (95, .gold), (99, .gold), (100, .legendary),
     ] as [(Int, BadgeTier?)])
     func 등급_경계값(similarity: Int, expected: BadgeTier?) {
         #expect(BadgeTierPolicy.tier(for: similarity) == expected)
@@ -108,6 +108,8 @@ struct BadgeHintTests {
     @Test func 더_높은_등급이면_승급_가능() {
         #expect(BadgeHint.evaluate(match(92), owned: owned(.bronze)) == .eligible(.silver))
         #expect(BadgeHint.evaluate(match(99), owned: owned(.silver)) == .eligible(.gold))
+        #expect(BadgeHint.evaluate(match(100), owned: owned(.gold)) == .eligible(.legendary))
+        #expect(BadgeHint.evaluate(match(100), owned: owned(.legendary)) == .owned(.legendary))
     }
 
     @Test func 같거나_낮은_등급이면_보유_중() {

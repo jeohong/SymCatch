@@ -54,6 +54,10 @@ enum DSColor {
     static let silverHi = Color(.silverHi)
     static let gold = Color(.gold)
     static let goldHi = Color(.goldHi)
+    /// 레전더리(100%): 보라 바탕에 분홍·하늘을 섞어 무지개빛으로 쓴다. 검정 글자 대비 5.4:1 이상.
+    static let legendary = Color(.legendary)
+    static let legendaryHi = Color(.legendaryHi)
+    static let legendaryAlt = Color(.legendaryAlt)
 
     // 기타
     static let grab = Color(.grab)
@@ -67,6 +71,7 @@ enum DSColor {
         case .bronze: bronze
         case .silver: silver
         case .gold: gold
+        case .legendary: legendary
         }
     }
 
@@ -76,7 +81,26 @@ enum DSColor {
         case .bronze: bronzeHi
         case .silver: silverHi
         case .gold: goldHi
+        case .legendary: legendaryHi
         }
+    }
+
+    /// 등급 칩 바탕. 레전더리는 보라→분홍 그라데이션, 나머지는 등급색.
+    static func tierFill(_ tier: BadgeTier) -> AnyShapeStyle {
+        switch tier {
+        case .legendary: AnyShapeStyle(LinearGradient(colors: [legendary, legendaryHi], startPoint: .leading, endPoint: .trailing))
+        case .bronze, .silver, .gold: AnyShapeStyle(self.tier(tier))
+        }
+    }
+
+    /// 메달 링·등급 점. CSS `conic-gradient(from 210deg, base, hi, base, hi, base)`(SwiftUI 각도는 3시 기준이라 −90°).
+    /// 레전더리는 보라→분홍→금→하늘로 한 바퀴 도는 무지개빛.
+    static func tierRing(_ tier: BadgeTier) -> AngularGradient {
+        let colors: [Color] = switch tier {
+        case .legendary: [legendary, legendaryHi, goldHi, legendaryAlt, legendary]
+        case .bronze, .silver, .gold: [self.tier(tier), tierHighlight(tier), self.tier(tier), tierHighlight(tier), self.tier(tier)]
+        }
+        return AngularGradient(colors: colors, center: .center, startAngle: .degrees(120), endAngle: .degrees(480))
     }
 
     /// 유사도 막대·테두리 색: 뱃지 기준(85%) 이상 골드, 그 외 accent

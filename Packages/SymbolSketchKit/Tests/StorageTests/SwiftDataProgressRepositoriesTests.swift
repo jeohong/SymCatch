@@ -96,6 +96,12 @@ struct SwiftDataBadgeRepositoryTests {
         #expect(try await repository.badge(forSymbol: "heart") == gold)
     }
 
+    @Test func 레전더리도_그대로_저장된다() async throws {
+        let legendary = SymbolBadge(symbolName: "sun.max", tier: .legendary, bestSimilarity: 100, bestSketch: Samples.sketch, earnedAt: Samples.date())
+        try await repository.save(legendary)
+        #expect(try await repository.badge(forSymbol: "sun.max") == legendary)
+    }
+
     @Test func 모두_지운다() async throws {
         try await repository.save(SymbolBadge(symbolName: "a", tier: .silver, bestSimilarity: 96, bestSketch: Samples.sketch, earnedAt: Samples.date()))
         try await repository.deleteAll()
