@@ -67,6 +67,24 @@ public struct DefaultFetchBadgesUseCase: FetchBadgesUseCase {
     }
 }
 
+// MARK: - 등급 맞추기(앱 시작 시)
+
+public protocol ReconcileBadgeTiersUseCase: Sendable {
+    /// 저장된 뱃지 등급을 최고 유사도에 맞춰 올린다. 바뀐 뱃지 수를 돌려준다.
+    func execute(now: Date) async throws -> Int
+}
+
+public struct DefaultReconcileBadgeTiersUseCase: ReconcileBadgeTiersUseCase {
+    private let badges: any BadgeRepository
+    public init(badges: any BadgeRepository) { self.badges = badges }
+
+    public func execute(now: Date) async throws -> Int {
+        let updated = BadgeTierPolicy.reconciled(try await badges.all(), now: now)
+        for badge in updated { try await badges.save(badge) }
+        return updated.count
+    }
+}
+
 // MARK: - 콜렉션(S6·S7)
 
 /// 카테고리 하나와 그 안의 심볼 이름들(콜렉션 격자 한 줄)

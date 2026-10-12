@@ -15,6 +15,19 @@ public enum BadgeTierPolicy {
     public static func tier(for similarity: Int) -> BadgeTier? {
         BadgeTier.allCases.last { similarity >= $0.minimumSimilarity }
     }
+
+    /// 저장된 뱃지의 등급을 최고 유사도에 맞춰 올린다(내리지는 않는다).
+    /// 등급 기준이 바뀌면(90/95/98 → 85/90/95/100, 2026-10-12) 예전에 받은 뱃지가 낮은 등급으로 남아 있기 때문이다.
+    /// - Returns: 등급이 바뀐 뱃지만
+    public static func reconciled(_ badges: [SymbolBadge], now: Date) -> [SymbolBadge] {
+        badges.compactMap { badge in
+            guard let deserved = tier(for: badge.bestSimilarity), deserved > badge.tier else { return nil }
+            var updated = badge
+            updated.tier = deserved
+            updated.upgradedAt = now
+            return updated
+        }
+    }
 }
 
 /// 결과를 탭했을 때 뱃지를 어떻게 할지(기획서 3.1, 10.3)
@@ -64,17 +77,20 @@ public enum BadgeAwardPolicy {
         guard var badge = existing else {
             return .newBadge(SymbolBadge(symbolName: symbolName, tier: tier, bestSimilarity: similarity, bestSketch: sketch, earnedAt: now))
         }
-        guard similarity > badge.bestSimilarity else { return .none }
-
-        badge.bestSimilarity = similarity
-        badge.bestSketch = sketch
+        let isNewBest = similarity > badge.bestSimilarity
+        if isNewBest {
+            badge.bestSimilarity = similarity
+            badge.bestSketch = sketch
+        }
+        // 등급은 점수가 최고 기록과 같거나 낮아도 오를 수 있다(등급 기준이 바뀌었거나 새 등급이 생긴 경우).
+        // 예: 예전 골드 100% → 레전더리가 생긴 뒤 다시 100%를 그리면 승급.
         if tier > badge.tier {
             let previous = badge.tier
             badge.tier = tier
             badge.upgradedAt = now
             return .upgraded(from: previous, to: badge)
         }
-        return .silentUpdate(badge)
+        return isNewBest ? .silentUpdate(badge) : .none
     }
 }
 

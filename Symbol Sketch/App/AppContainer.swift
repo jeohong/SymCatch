@@ -101,6 +101,11 @@ final class AppContainer {
         )
     }
 
+    /// 앱을 켤 때 한 번: 등급 기준이 바뀌기 전에 받은 뱃지의 등급을 최고 유사도에 맞춘다(올리기만 한다).
+    func reconcileBadgeTiers() async {
+        _ = try? await DefaultReconcileBadgeTiersUseCase(badges: badges).execute(now: .now)
+    }
+
     // MARK: - ViewModel 팩토리
 
     func makeDrawViewModel(navigator: any DrawNavigating) -> DrawViewModel {

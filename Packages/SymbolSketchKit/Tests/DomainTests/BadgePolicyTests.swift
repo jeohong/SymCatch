@@ -85,6 +85,34 @@ struct BadgeAwardPolicyTests {
         #expect(!award.celebrates)
     }
 
+    @Test func 점수가_같아도_더_높은_등급이_생겼으면_승급() {
+        // 레전더리가 생기기 전에 100%로 받은 골드
+        let award = evaluate(existing: badge(.gold, best: 100), similarity: 100)
+        guard case .upgraded(let from, let upgraded) = award else {
+            Issue.record("승급이어야 한다: \(award)")
+            return
+        }
+        #expect(from == .gold && upgraded.tier == .legendary)
+        #expect(upgraded.bestSketch == Fixtures.otherSketch)    // 최고 기록이 아니므로 그림은 그대로
+    }
+
+    @Test func 기준이_바뀌어_낮게_남은_뱃지는_낮은_점수로도_승급() {
+        // 예전 기준(95 실버)으로 97%에 받은 실버 → 지금 기준에서 96%면 골드
+        let award = evaluate(existing: badge(.silver, best: 97), similarity: 96)
+        guard case .upgraded(_, let upgraded) = award else {
+            Issue.record("승급이어야 한다: \(award)")
+            return
+        }
+        #expect(upgraded.tier == .gold && upgraded.bestSimilarity == 97)
+    }
+
+    @Test func 저장된_등급을_최고_유사도에_맞춰_올리고_내리지는_않는다() {
+        let badges = [badge(.silver, best: 97), badge(.gold, best: 100), badge(.bronze, best: 86), badge(.gold, best: 90)]
+        let reconciled = BadgeTierPolicy.reconciled(badges, now: now)
+        #expect(reconciled.map(\.tier) == [.gold, .legendary])
+        #expect(reconciled.allSatisfy { $0.upgradedAt == now })
+    }
+
     @Test func 기존_최고보다_낮거나_같으면_변화_없음() {
         #expect(evaluate(existing: badge(.silver, best: 93), similarity: 93) == .none)
         #expect(evaluate(existing: badge(.silver, best: 93), similarity: 90) == .none)

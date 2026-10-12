@@ -91,6 +91,10 @@ struct RootTabView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: router.celebration)
+        .task {
+            await container.reconcileBadgeTiers()
+            await drawViewModel.refreshProgress()   // 맞춘 등급을 결과 행 표시에 바로 반영
+        }
         .onChange(of: router.pendingChallenge) { _, name in
             // 콜렉션의 "도전하기" → 그리기 화면에 목표를 넘긴다.
             guard let name else { return }

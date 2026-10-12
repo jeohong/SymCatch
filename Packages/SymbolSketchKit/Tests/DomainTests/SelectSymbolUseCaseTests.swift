@@ -68,6 +68,17 @@ struct SelectSymbolUseCaseTests {
         #expect(try await badges.badge(forSymbol: "heart")?.bestSimilarity == 93)
     }
 
+    @Test func 저장된_뱃지_등급을_맞춘다() async throws {
+        try await badges.save(SymbolBadge(symbolName: "heart", tier: .gold, bestSimilarity: 100, bestSketch: Fixtures.sketch, earnedAt: Fixtures.date()))
+        try await badges.save(SymbolBadge(symbolName: "star", tier: .bronze, bestSimilarity: 86, bestSketch: Fixtures.sketch, earnedAt: Fixtures.date()))
+
+        let changed = try await DefaultReconcileBadgeTiersUseCase(badges: badges).execute(now: Fixtures.date(days: 1))
+
+        #expect(changed == 1)
+        #expect(try await badges.badge(forSymbol: "heart")?.tier == .legendary)
+        #expect(try await badges.badge(forSymbol: "star")?.tier == .bronze)
+    }
+
     @Test func 기록은_200건을_넘지_않는다() async throws {
         for index in 0..<(HistoryRetentionPolicy.limit + 3) {
             _ = try await useCase.execute(match: match("s\(index)", 10), sketch: Fixtures.sketch, now: Fixtures.date(hours: index))
