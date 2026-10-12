@@ -80,18 +80,18 @@ struct EvaluationRunComparisonTests {
         let corrected = [measure(0.6), measure(0.7), measure(0.8)]
         let run = CalibrationRun(byMode: [
             .raw: .init(calibration: raw, holdout: [measure(0.95)]),
-            .hubness50: .init(calibration: corrected, holdout: [measure(0.75)]),
+            .layout10: .init(calibration: corrected, holdout: [measure(0.75)]),
         ], engineID: "vision-outline")
         let viewModel = EvaluationRunViewModel(prepareIndex: StubPrepare(ready: true), runCalibration: StubRun(run: run),
                                                currentCalibrator: ScoreCalibrator(sLow: 0.5, sHigh: 0.95))
         await viewModel.start()
 
-        #expect(viewModel.comparison.map(\.mode) == [.raw, .hubness50])
-        #expect(viewModel.scoreMode == .hubness50)
+        #expect(viewModel.comparison.map(\.mode) == [.raw, .layout10])
+        #expect(viewModel.scoreMode == .layout10)
         #expect(viewModel.report?.recommended.sHigh == 0.7)
         viewModel.scoreMode = .raw
         #expect(viewModel.report?.recommended.sHigh == 0.9)
-        #expect(viewModel.exportText.contains("hubness50,calibration,"))
-        #expect(viewModel.exportText.contains("| 닮은꼴 50% | 1 |"))
+        #expect(viewModel.exportText.contains("layout10,calibration,"))
+        #expect(viewModel.exportText.contains("| + 방향 0.1 | 1 |"))
     }
 }

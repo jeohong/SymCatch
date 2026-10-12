@@ -7,20 +7,21 @@
 
 import Foundation
 
-/// 점수 방식: 엔진 원래 점수 / 만능 닮은꼴 보정(세기별, `HubnessCorrection`)
+/// 점수 방식: 엔진 원래 점수 / 지금 앱(닮은꼴 25%) / 거기에 방향 보정 세기별(`ScoreAdjustment`)
 public enum CalibrationScoreMode: String, Sendable, Hashable, CaseIterable {
     case raw
     case hubness25
-    case hubness50
-    case hubness100
+    case layout05
+    case layout10
+    case layout20
 
-    /// 보정 세기 0...1
-    public var hubnessWeight: Double {
+    public var weights: ScoreWeights {
         switch self {
-        case .raw: 0
-        case .hubness25: 0.25
-        case .hubness50: 0.5
-        case .hubness100: 1
+        case .raw: .none
+        case .hubness25: ScoreWeights(hubness: 0.25)
+        case .layout05: ScoreWeights(hubness: 0.25, layout: 0.05)
+        case .layout10: ScoreWeights(hubness: 0.25, layout: 0.1)
+        case .layout20: ScoreWeights(hubness: 0.25, layout: 0.2)
         }
     }
 }
@@ -55,7 +56,7 @@ public struct CalibrationRun: Sendable, Hashable {
         CalibrationScoreMode.allCases.filter { byMode[$0] != nil }
     }
 
-    /// 닮은꼴 보정 결과가 있는지
+    /// 보정 결과(닮은꼴·방향)가 있는지
     public var supportsCorrection: Bool { availableModes.count > 1 }
 
     public func measurements(_ mode: CalibrationScoreMode) -> (calibration: [SampleMeasurement], holdout: [SampleMeasurement]) {
@@ -100,9 +101,9 @@ public struct DefaultRunCalibrationUseCase: RunCalibrationUseCase {
             let scored = try await scorer.rawScores(for: sample.sketch)
             let elapsed = start.duration(to: clock.now)
             let seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
-            supportsCorrection = supportsCorrection && scored.allSatisfy { $0.hubness != nil }
+            supportsCorrection = supportsCorrection && scored.allSatisfy { $0.hubness != nil && $0.layout != nil }
             for mode in CalibrationScoreMode.allCases {
-                let modeScores = HubnessCorrection.corrected(scored, weight: mode.hubnessWeight)
+                let modeScores = ScoreAdjustment.adjusted(scored, weights: mode.weights)
                 measured[mode, default: []].append(.make(sample: sample, scored: modeScores, seconds: seconds))
             }
             progress(Double(index + 1) / Double(max(ordered.count, 1)))

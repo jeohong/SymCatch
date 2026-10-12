@@ -28,7 +28,7 @@ final class EvaluationRunViewModel {
     private(set) var state: State = .idle
     var highPercentile = 0.5
     /// 화면에 보여 줄 점수 방식(기존 / 닮은꼴 보정)
-    var scoreMode: CalibrationScoreMode = .hubness50
+    var scoreMode: CalibrationScoreMode = .layout10
 
     let currentCalibrator: ScoreCalibrator
     private let prepareIndex: any PrepareSymbolIndexUseCase
@@ -134,9 +134,10 @@ final class EvaluationRunViewModel {
     static func title(_ mode: CalibrationScoreMode) -> String {
         switch mode {
         case .raw: "기존 점수"
-        case .hubness25: "닮은꼴 25%"
-        case .hubness50: "닮은꼴 50%"
-        case .hubness100: "닮은꼴 100%"
+        case .hubness25: "지금 앱(닮은꼴 25%)"
+        case .layout05: "+ 방향 0.05"
+        case .layout10: "+ 방향 0.1"
+        case .layout20: "+ 방향 0.2"
         }
     }
 

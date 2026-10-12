@@ -117,7 +117,8 @@ private struct FakeScorer: SymbolScoring {
         // 그림의 첫 점 x(0.1, 0.2, …)로 정답 순번을 정한다(테스트용).
         let index = Int(((sketch.strokes.first?.first?.x ?? 0) * 10).rounded()) - 1
         return names.enumerated().map {
-            ScoredSymbol(name: $0.element, family: $0.element, score: $0.offset == index ? 0.9 : 0.4, hubness: $0.element == "bolt" ? 0.8 : 0.3)
+            ScoredSymbol(name: $0.element, family: $0.element, score: $0.offset == index ? 0.9 : 0.4, hubness: $0.element == "bolt" ? 0.8 : 0.3,
+                         layout: $0.offset == index ? 0.9 : 0)
         }
     }
 }
@@ -143,7 +144,7 @@ struct RunCalibrationUseCaseTests {
 
         #expect(run.supportsCorrection)
         #expect(run.availableModes == CalibrationScoreMode.allCases)
-        let corrected = try #require(run.report(mode: .hubness100, highPercentile: 0.5))
+        let corrected = try #require(run.report(mode: .layout10, highPercentile: 0.5))
         #expect(corrected.holdout.top1 == 1)
         // 보정 점수: 정답 2×0.9 − r(그림) − 0.3, 오답은 더 낮다.
         #expect(corrected.recommended.sHigh > corrected.recommended.sLow)

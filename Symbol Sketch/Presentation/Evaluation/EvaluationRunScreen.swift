@@ -42,7 +42,7 @@ struct EvaluationRunScreen: View {
                                 Text(EvaluationRunViewModel.title(mode)).tag(mode)
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
                     } header: {
                         Text("방식 비교(시험용)")
                     } footer: {

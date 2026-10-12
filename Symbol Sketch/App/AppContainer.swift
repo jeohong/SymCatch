@@ -185,7 +185,7 @@ final class AppContainer {
         if let pipeline = method.embeddingPipeline {
             let store = SymbolIndexStore(fileURL: indexDirectory.appending(path: "\(method.rawValue).index"))
             builder = SymbolIndexBuilder(catalog: symbolCatalog, pipeline: pipeline, store: store)
-            searcher = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: method.calibrator, hubnessWeight: method.hubnessWeight)
+            searcher = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: method.calibrator, weights: method.scoreWeights)
         } else {
             let chamfer = ChamferSymbolSearch(catalog: symbolCatalog, calibrator: method.calibrator)
             builder = ChamferIndexPreparer(search: chamfer)
