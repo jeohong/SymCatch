@@ -50,7 +50,7 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
         let scores = loaded.engine.scores(for: query)
         return loaded.index.names.indices.map { index in
             ScoredSymbol(name: loaded.index.names[index], family: loaded.families[index], score: Double(scores[index]),
-                         complexity: Double(loaded.index.complexity[index]))
+                         complexity: Double(loaded.index.complexity[index]), hubness: Double(loaded.index.hubness[index]))
         }
     }
 

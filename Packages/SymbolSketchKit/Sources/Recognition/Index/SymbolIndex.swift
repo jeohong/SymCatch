@@ -17,17 +17,21 @@ public struct SymbolIndex: Sendable, Hashable {
     public let names: [String]
     /// 심볼별 윤곽 복잡도(0...1). 너무 단순한 심볼을 뱃지 대상에서 뺄 때 쓴다.
     public let complexity: [Float]
+    /// 심볼별 "만능 닮은꼴" 정도: 가장 닮은 다른 심볼 k개의 평균 코사인(`HubnessCorrection`)
+    public let hubness: [Float]
     public let dimension: Int
     /// `names.count × dimension` 행렬(행 우선)
     public let vectors: [Float]
 
-    public init(engineID: String, osVersion: String, names: [String], complexity: [Float], dimension: Int, vectors: [Float]) {
+    public init(engineID: String, osVersion: String, names: [String], complexity: [Float], hubness: [Float], dimension: Int, vectors: [Float]) {
         precondition(complexity.count == names.count, "complexity 개수가 names와 맞지 않는다")
+        precondition(hubness.count == names.count, "hubness 개수가 names와 맞지 않는다")
         precondition(vectors.count == names.count * dimension, "vectors 크기가 names × dimension과 맞지 않는다")
         self.engineID = engineID
         self.osVersion = osVersion
         self.names = names
         self.complexity = complexity
+        self.hubness = hubness
         self.dimension = dimension
         self.vectors = vectors
     }

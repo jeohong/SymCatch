@@ -99,11 +99,17 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
             vectors.append(contentsOf: result.vector)
         }
 
+        // 만능 닮은꼴 정도: 모든 심볼 쌍의 코사인을 계산하므로 GCD 스레드에서 돌린다(BlockingWork 참고).
+        let families = keptNames.map(VariantGrouper.family(of:))
+        let hubness = try await BlockingWork.run { [vectors, dimension] in
+            SymbolHubness.compute(vectors: vectors, dimension: dimension, families: families)
+        }
         try store.save(SymbolIndex(
             engineID: pipeline.engineID,
             osVersion: osVersion,
             names: keptNames,
             complexity: complexity,
+            hubness: hubness,
             dimension: dimension,
             vectors: vectors
         ))
