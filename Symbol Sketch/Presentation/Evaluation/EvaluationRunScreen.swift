@@ -83,6 +83,17 @@ struct EvaluationRunScreen: View {
         ForEach(report.byAuthor.keys.sorted(), id: \.self) { author in
             Section("작성자: \(author)") { accuracyRows(report.byAuthor[author]!) }
         }
+        Section {
+            ForEach(report.tradeOffs, id: \.targetWrongRate) { tradeOff in
+                value("오답 목표 \(EvaluationRunViewModel.percentText(tradeOff.targetWrongRate))",
+                      "정답 \(EvaluationRunViewModel.percentText(tradeOff.holdout.targetBadgeRate)) · 오답 \(EvaluationRunViewModel.percentText(tradeOff.holdout.wrongBadgeRate))",
+                      detail: "sHigh \(EvaluationRunViewModel.score(tradeOff.calibrator.sHigh))")
+            }
+        } header: {
+            Text("엄격도별 결과")
+        } footer: {
+            Text("엉뚱한 1위가 90%를 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 90% 이상인 비율")
+        }
         Section("오답인데 90% 이상이 자주 나온 심볼") {
             if report.intruders.isEmpty { Text("없음").foregroundStyle(DSColor.textSecondary) }
             ForEach(report.intruders, id: \.name) { intruder in

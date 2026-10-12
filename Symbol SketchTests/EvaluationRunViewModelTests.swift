@@ -58,6 +58,9 @@ struct EvaluationRunViewModelTests {
         #expect(report.byAuthor.keys.sorted() == ["A", "B"])
         #expect(viewModel.exportText.contains("| 전체 | 2 |"))
         #expect(viewModel.exportText.contains("vision-outline"))
+        #expect(viewModel.exportText.contains("## 엄격도별 결과"))
+        #expect(viewModel.exportText.contains(EvaluationRunViewModel.csvHeader))
+        #expect(viewModel.exportText.contains("holdout,B,heart,0.7000,5,"))
     }
 
     @Test func 분위를_바꾸면_다시_계산한다() async throws {

@@ -93,11 +93,30 @@ final class EvaluationRunViewModel {
             Self.row("전체", report.holdout),
         ]
         lines += report.byAuthor.keys.sorted().map { Self.row($0, report.byAuthor[$0]!) }
+        lines += ["", "## 엄격도별 결과(엉뚱한 1위가 90%를 넘는 비율 목표)", "",
+                  "| 목표 | sHigh | 정답 90%+ | 오답 90%+ | 정답 중앙값 |", "| --- | --- | --- | --- | --- |"]
+        lines += report.tradeOffs.map {
+            "| \(Self.percentText($0.targetWrongRate)) | \(Self.score($0.calibrator.sHigh)) | \(Self.percentText($0.holdout.targetBadgeRate))"
+                + " | \(Self.percentText($0.holdout.wrongBadgeRate)) | \($0.holdout.medianTargetPercent.map { "\($0)%" } ?? "-") |"
+        }
         lines += ["", "## 오답인데 90% 이상이 자주 나온 심볼", "", "| 심볼 | 복잡도 | 횟수 |", "| --- | --- | --- |"]
         lines += report.intruders.map { "| \($0.name) | \(Self.complexity($0.complexity)) | \($0.count) |" }
         lines += ["", "## 가장 단순한 정답 심볼", "", "| 심볼 | 복잡도 |", "| --- | --- |"]
         lines += report.simplestTargets.map { "| \($0.name) | \(Self.complexity($0.complexity)) |" }
+        lines += ["", "## 그림별 원시 점수(CSV)", "", "```csv", Self.csvHeader]
+        lines += run.calibration.map { Self.csvRow("calibration", $0) } + run.holdout.map { Self.csvRow("holdout", $0) }
+        lines += ["```"]
         return lines.joined(separator: "\n")
+    }
+
+    static let csvHeader = "half,author,target,targetScore,targetRank,targetComplexity,wrongMedian,seconds,topWrong(name:score:complexity|…)"
+
+    static func csvRow(_ half: String, _ m: SampleMeasurement) -> String {
+        let wrong = m.topWrong.map { "\($0.name):\(score($0.score)):\(complexity($0.complexity))" }.joined(separator: "|")
+        return [half, m.author, m.targetName, m.targetScore.map(score) ?? "", m.targetRank.map(String.init) ?? "",
+                complexity(m.targetComplexity), score(m.wrongMedian), String(format: "%.4f", m.seconds), wrong]
+            .map { $0.contains(",") ? "\"\($0)\"" : $0 }
+            .joined(separator: ",")
     }
 
     private static func row(_ title: String, _ accuracy: CalibrationReport.Accuracy) -> String {
