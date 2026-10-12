@@ -67,3 +67,37 @@ struct FileEvaluationSampleRepositoryTests {
         #expect(exported.map(\.symbolName) == ["heart", "star"])
     }
 }
+
+struct FileEvaluationSampleImportTests {
+    private let root = FileManager.default.temporaryDirectory.appendingPathComponent("eval-import-\(UUID().uuidString)")
+
+    private func repository(_ folder: String) -> FileEvaluationSampleRepository {
+        FileEvaluationSampleRepository(directory: root.appendingPathComponent(folder), exportDirectory: root.appendingPathComponent("export"),
+                                       now: { Date(timeIntervalSince1970: 1_791_000_000) })
+    }
+
+    @Test func 내보낸_파일을_다른_곳에서_다시_들이면_그대로_돌아온다() async throws {
+        let original = repository("original")
+        let samples = (0..<3).map {
+            EvaluationSample(symbolName: "s\($0)", sketch: Sketch(strokes: [[SketchPoint(x: 0.1, y: 0.2), SketchPoint(x: 0.8, y: 0.9)]]),
+                             author: "chikong", createdAt: Date(timeIntervalSince1970: Double($0)))
+        }
+        for sample in samples { try await original.save(sample) }
+        let archive = try await original.exportArchive()
+
+        let reinstalled = repository("reinstalled")
+        #expect(try await reinstalled.importArchive(from: archive) == 3)
+        #expect(try await reinstalled.all() == samples)
+
+        // 같은 파일을 또 들여도 중복되지 않는다.
+        #expect(try await reinstalled.importArchive(from: archive) == 0)
+        #expect(try await reinstalled.all().count == 3)
+    }
+
+    @Test func 형식이_다른_파일은_오류() async throws {
+        let file = root.appendingPathComponent("broken.json")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data("{\"hello\": 1}".utf8).write(to: file)
+        await #expect(throws: (any Error).self) { try await repository("x").importArchive(from: file) }
+    }
+}

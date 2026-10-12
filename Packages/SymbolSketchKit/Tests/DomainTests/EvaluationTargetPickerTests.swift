@@ -43,6 +43,7 @@ private actor InMemoryEvaluationRepository: EvaluationSampleRepository {
     func all() async throws -> [EvaluationSample] { samples }
     func delete(id: UUID) async throws { samples.removeAll { $0.id == id } }
     func exportArchive() async throws -> URL { URL(fileURLWithPath: "/tmp/export.json") }
+    func importArchive(from url: URL) async throws -> Int { 0 }
 }
 
 struct LoadEvaluationProgressUseCaseTests {

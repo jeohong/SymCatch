@@ -56,6 +56,16 @@ public actor FileEvaluationSampleRepository: EvaluationSampleRepository {
         return url
     }
 
+    public func importArchive(from url: URL) async throws -> Int {
+        let samples = try Self.decoder.decode([EvaluationSample].self, from: Data(contentsOf: url))
+        var imported = 0
+        for sample in samples where !FileManager.default.fileExists(atPath: fileURL(for: sample.id).path) {
+            try await save(sample)
+            imported += 1
+        }
+        return imported
+    }
+
     private func fileURL(for id: UUID) -> URL {
         directory.appendingPathComponent("\(id.uuidString).json")
     }

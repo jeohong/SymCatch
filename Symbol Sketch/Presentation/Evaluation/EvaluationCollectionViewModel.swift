@@ -14,6 +14,8 @@ final class EvaluationCollectionViewModel {
     enum Feedback: Equatable {
         case saved
         case tooSmall
+        /// 가져오기로 새로 추가한 그림 수
+        case imported(Int)
         case failed(String)
     }
 
@@ -34,17 +36,20 @@ final class EvaluationCollectionViewModel {
     private let loadProgress: any LoadEvaluationProgressUseCase
     private let saveSample: any SaveEvaluationSampleUseCase
     private let exportSamples: any ExportEvaluationSamplesUseCase
+    private let importSamples: any ImportEvaluationSamplesUseCase
     private let now: () -> Date
 
     init(
         loadProgress: any LoadEvaluationProgressUseCase,
         saveSample: any SaveEvaluationSampleUseCase,
         exportSamples: any ExportEvaluationSamplesUseCase,
+        importSamples: any ImportEvaluationSamplesUseCase,
         now: @escaping () -> Date = Date.init
     ) {
         self.loadProgress = loadProgress
         self.saveSample = saveSample
         self.exportSamples = exportSamples
+        self.importSamples = importSamples
         self.now = now
     }
 
@@ -91,6 +96,21 @@ final class EvaluationCollectionViewModel {
             exportedFile = try await exportSamples.execute()
         } catch {
             feedback = .failed(error.localizedDescription)
+        }
+    }
+
+    /// 내보냈던 파일(.json)을 다시 들인다. 파일 앱에서 고른 파일은 접근 권한을 잠깐 열어야 읽을 수 있다.
+    func importArchive(from url: URL, author: String) async {
+        isBusy = true
+        defer { isBusy = false }
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        do {
+            feedback = .imported(try await importSamples.execute(from: url))
+            skipped = []
+            await refresh(author: author)
+        } catch {
+            feedback = .failed(String(localized: "가져오지 못했어요: \(error.localizedDescription)"))
         }
     }
 

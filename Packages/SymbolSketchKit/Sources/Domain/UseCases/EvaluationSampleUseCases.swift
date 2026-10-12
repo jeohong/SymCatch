@@ -70,3 +70,20 @@ public struct DefaultExportEvaluationSamplesUseCase: ExportEvaluationSamplesUseC
         try await repository.exportArchive()
     }
 }
+
+public protocol ImportEvaluationSamplesUseCase: Sendable {
+    /// 내보냈던 평가셋 파일을 다시 들인다(앱을 지웠다 다시 깔았을 때). 새로 추가한 그림 수를 돌려준다.
+    func execute(from url: URL) async throws -> Int
+}
+
+public struct DefaultImportEvaluationSamplesUseCase: ImportEvaluationSamplesUseCase {
+    private let repository: any EvaluationSampleRepository
+
+    public init(repository: any EvaluationSampleRepository) {
+        self.repository = repository
+    }
+
+    public func execute(from url: URL) async throws -> Int {
+        try await repository.importArchive(from: url)
+    }
+}

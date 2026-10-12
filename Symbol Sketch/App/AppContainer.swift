@@ -152,7 +152,8 @@ final class AppContainer {
         EvaluationCollectionViewModel(
             loadProgress: DefaultLoadEvaluationProgressUseCase(repository: evaluationSamples),
             saveSample: DefaultSaveEvaluationSampleUseCase(repository: evaluationSamples),
-            exportSamples: DefaultExportEvaluationSamplesUseCase(repository: evaluationSamples)
+            exportSamples: DefaultExportEvaluationSamplesUseCase(repository: evaluationSamples),
+            importSamples: DefaultImportEvaluationSamplesUseCase(repository: evaluationSamples)
         )
     }
 

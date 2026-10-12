@@ -8,6 +8,7 @@
 #if DEBUG
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 import Domain
 
 /// 개발용 수집 모드 화면. DEBUG 빌드에서만 존재한다.
@@ -15,6 +16,7 @@ struct EvaluationCollectionScreen: View {
     @State private var viewModel: EvaluationCollectionViewModel
     @State private var canvas = SketchCanvasController()
     @State private var isSharing = false
+    @State private var isImporting = false
     @AppStorage("evaluation.author") private var author = ""
 
     init(viewModel: EvaluationCollectionViewModel) {
@@ -47,6 +49,18 @@ struct EvaluationCollectionScreen: View {
                 }
                 .disabled(viewModel.progress.overallTotal == 0 || viewModel.isBusy)
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isImporting = true
+                } label: {
+                    Label("가져오기", systemImage: "square.and.arrow.down")
+                }
+                .disabled(viewModel.isBusy)
+            }
+        }
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
+            guard case .success(let url) = result else { return }
+            Task { await viewModel.importArchive(from: url, author: author) }
         }
         .sheet(isPresented: $isSharing) {
             if let file = viewModel.exportedFile {
@@ -156,6 +170,9 @@ struct EvaluationCollectionScreen: View {
         case .tooSmall:
             Label("조금 더 크게 그려 주세요", systemImage: "exclamationmark.circle")
                 .foregroundStyle(.orange)
+        case .imported(let count):
+            Label("그림 \(count)장을 가져왔어요", systemImage: "square.and.arrow.down")
+                .foregroundStyle(.secondary)
         case .failed(let message):
             Label(message, systemImage: "xmark.octagon")
                 .foregroundStyle(.red)
@@ -195,12 +212,17 @@ private struct PreviewExportUseCase: ExportEvaluationSamplesUseCase {
     func execute() async throws -> URL { URL(fileURLWithPath: "/tmp/preview.json") }
 }
 
+private struct PreviewImportUseCase: ImportEvaluationSamplesUseCase {
+    func execute(from url: URL) async throws -> Int { 0 }
+}
+
 private func previewScreen() -> some View {
     NavigationStack {
         EvaluationCollectionScreen(viewModel: EvaluationCollectionViewModel(
             loadProgress: PreviewProgressUseCase(),
             saveSample: PreviewSaveUseCase(),
-            exportSamples: PreviewExportUseCase()
+            exportSamples: PreviewExportUseCase(),
+            importSamples: PreviewImportUseCase()
         ))
     }
 }

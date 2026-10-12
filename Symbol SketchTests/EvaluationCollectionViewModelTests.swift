@@ -11,7 +11,8 @@ import Domain
 @testable import Symbol_Sketch
 
 @MainActor
-private final class FakeEvaluationUseCases: LoadEvaluationProgressUseCase, SaveEvaluationSampleUseCase, ExportEvaluationSamplesUseCase, @unchecked Sendable {
+private final class FakeEvaluationUseCases: LoadEvaluationProgressUseCase, SaveEvaluationSampleUseCase, ExportEvaluationSamplesUseCase,
+                                           ImportEvaluationSamplesUseCase, @unchecked Sendable {
     var counts: [String: Int] = [:]
     var saved: [(symbol: String, author: String)] = []
     var saveError: Error?
@@ -30,6 +31,16 @@ private final class FakeEvaluationUseCases: LoadEvaluationProgressUseCase, SaveE
     }
 
     nonisolated func execute() async throws -> URL { URL(fileURLWithPath: "/tmp/export.json") }
+
+    /// 가져오기: heart 2장을 들인 것으로 친다.
+    var importError: Error?
+    nonisolated func execute(from url: URL) async throws -> Int {
+        try await MainActor.run {
+            if let importError { throw importError }
+            counts["heart", default: 0] += 2
+            return 2
+        }
+    }
 }
 
 @MainActor
@@ -37,7 +48,32 @@ struct EvaluationCollectionViewModelTests {
     private let drawn = Sketch(strokes: [[SketchPoint(x: 0.1, y: 0.1), SketchPoint(x: 0.9, y: 0.9)]])
 
     private func makeViewModel(_ fake: FakeEvaluationUseCases) -> EvaluationCollectionViewModel {
-        EvaluationCollectionViewModel(loadProgress: fake, saveSample: fake, exportSamples: fake)
+        EvaluationCollectionViewModel(loadProgress: fake, saveSample: fake, exportSamples: fake, importSamples: fake)
+    }
+
+    @Test func 가져오면_장수를_알려주고_진행을_다시_읽는다() async {
+        let fake = FakeEvaluationUseCases()
+        let viewModel = makeViewModel(fake)
+        await viewModel.load(author: "chikong")
+
+        await viewModel.importArchive(from: URL(fileURLWithPath: "/tmp/eval.json"), author: "chikong")
+
+        #expect(viewModel.feedback == .imported(2))
+        #expect(viewModel.progress.countsByTarget["heart"] == 2)
+        #expect(!viewModel.isBusy)
+    }
+
+    @Test func 가져오기에_실패하면_알려준다() async {
+        let fake = FakeEvaluationUseCases()
+        fake.importError = CocoaError(.fileReadCorruptFile)
+        let viewModel = makeViewModel(fake)
+
+        await viewModel.importArchive(from: URL(fileURLWithPath: "/tmp/eval.json"), author: "chikong")
+
+        guard case .failed = viewModel.feedback else {
+            Issue.record("실패를 알려야 한다: \(String(describing: viewModel.feedback))")
+            return
+        }
     }
 
     @Test func 처음에는_그린_수가_가장_적은_첫_대표_심볼을_보여준다() async {
