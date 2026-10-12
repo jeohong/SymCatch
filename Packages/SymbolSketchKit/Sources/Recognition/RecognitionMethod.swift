@@ -17,7 +17,8 @@ public enum RecognitionMethod: String, Sendable, CaseIterable {
     case visionOutline
 
     /// 유사도 % 보정값(기획서 9.5).
-    /// - B 윤곽선(앱이 쓰는 방식): 실기기 평가셋 102장으로 정한 값(계획서 7장 결정 14, 2026-10-12).
+    /// - B 윤곽선(앱이 쓰는 방식): 실기기 평가셋 102장으로 정한 값(계획서 7장 결정 16, 2026-10-12).
+    ///   "엉뚱한 1위가 뱃지 기준(85%)을 넘는 그림 10%" 목표로 정했다 → 시험용 정답 18%, 오답 8%가 85% 이상.
     ///   닮은꼴 보정 점수 기준이므로 `scoreWeights`와 짝을 이룬다. 둘 중 하나를 바꾸면 평가 실행으로 다시 정한다.
     /// - A·B 채움: 비교용으로만 남긴 방식이라 임시 값.
     public var calibrator: ScoreCalibrator {
@@ -28,16 +29,16 @@ public enum RecognitionMethod: String, Sendable, CaseIterable {
         case .visionFilled:
             ScoreCalibrator(sLow: 0.5, sHigh: 0.95)
         case .visionOutline:
-            ScoreCalibrator(sLow: 0.3146, sHigh: 0.6805)
+            ScoreCalibrator(sLow: 0.3457, sHigh: 0.7608)
         }
     }
 
     /// 점수 보정 세기(`ScoreAdjustment`): 만능 닮은꼴 보정, 방향 보정. 0이면 하지 않는다.
-    /// 방향 보정 세기는 평가 실행으로 정하기 전이라 아직 0이다.
+    /// B 윤곽선: 닮은꼴 0.25(찾기 성능을 지키는 가장 센 값), 방향 0.1(Top1 39→49%, 구분력이 가장 좋음). 결정 16.
     public var scoreWeights: ScoreWeights {
         switch self {
         case .chamfer, .visionFilled: .none
-        case .visionOutline: ScoreWeights(hubness: 0.25, layout: 0)
+        case .visionOutline: ScoreWeights(hubness: 0.25, layout: 0.1)
         }
     }
 

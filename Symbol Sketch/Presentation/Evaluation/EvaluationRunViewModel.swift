@@ -134,9 +134,9 @@ final class EvaluationRunViewModel {
     static func title(_ mode: CalibrationScoreMode) -> String {
         switch mode {
         case .raw: "기존 점수"
-        case .hubness25: "지금 앱(닮은꼴 25%)"
+        case .hubness25: "닮은꼴 25%"
         case .layout05: "+ 방향 0.05"
-        case .layout10: "+ 방향 0.1"
+        case .layout10: "+ 방향 0.1(지금 앱)"
         case .layout20: "+ 방향 0.2"
         }
     }

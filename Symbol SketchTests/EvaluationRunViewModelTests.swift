@@ -92,6 +92,6 @@ struct EvaluationRunComparisonTests {
         viewModel.scoreMode = .raw
         #expect(viewModel.report?.recommended.sHigh == 0.9)
         #expect(viewModel.exportText.contains("layout10,calibration,"))
-        #expect(viewModel.exportText.contains("| + 방향 0.1 | 1 |"))
+        #expect(viewModel.exportText.contains("| + 방향 0.1(지금 앱) | 1 |"))
     }
 }
