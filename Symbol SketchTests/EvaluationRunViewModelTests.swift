@@ -56,11 +56,12 @@ struct EvaluationRunViewModelTests {
         let report = try #require(viewModel.report)
         #expect(report.recommended == ScoreCalibrator(sLow: 0.5, sHigh: 0.9))
         #expect(report.byAuthor.keys.sorted() == ["A", "B"])
-        #expect(viewModel.exportText.contains("| 전체 | 2 |"))
+        #expect(viewModel.exportText.contains("| 기존 점수 | 2 |"))
         #expect(viewModel.exportText.contains("vision-outline"))
         #expect(viewModel.exportText.contains("## 엄격도별 결과"))
         #expect(viewModel.exportText.contains(EvaluationRunViewModel.csvHeader))
-        #expect(viewModel.exportText.contains("holdout,B,heart,0.7000,5,"))
+        #expect(viewModel.exportText.contains("raw,holdout,B,heart,0.7000,5,"))
+        #expect(viewModel.comparison.map(\.mode) == [.raw])          // 보정 측정값이 없으면 기존 방식만
     }
 
     @Test func 분위를_바꾸면_다시_계산한다() async throws {
@@ -69,5 +70,28 @@ struct EvaluationRunViewModelTests {
         viewModel.highPercentile = 0.75
         let report = try #require(viewModel.report)
         #expect(abs(report.recommended.sHigh - 0.95) < 1e-9)
+    }
+}
+
+@MainActor
+struct EvaluationRunComparisonTests {
+    @Test func 닮은꼴_보정_결과가_있으면_두_방식을_나란히_보여준다() async throws {
+        let raw = [measure(0.8), measure(0.9), measure(1.0)]
+        let corrected = [measure(0.6), measure(0.7), measure(0.8)]
+        let run = CalibrationRun(byMode: [
+            .raw: .init(calibration: raw, holdout: [measure(0.95)]),
+            .hubness50: .init(calibration: corrected, holdout: [measure(0.75)]),
+        ], engineID: "vision-outline")
+        let viewModel = EvaluationRunViewModel(prepareIndex: StubPrepare(ready: true), runCalibration: StubRun(run: run),
+                                               currentCalibrator: ScoreCalibrator(sLow: 0.5, sHigh: 0.95))
+        await viewModel.start()
+
+        #expect(viewModel.comparison.map(\.mode) == [.raw, .hubness50])
+        #expect(viewModel.scoreMode == .hubness50)
+        #expect(viewModel.report?.recommended.sHigh == 0.7)
+        viewModel.scoreMode = .raw
+        #expect(viewModel.report?.recommended.sHigh == 0.9)
+        #expect(viewModel.exportText.contains("hubness50,calibration,"))
+        #expect(viewModel.exportText.contains("| 닮은꼴 50% | 1 |"))
     }
 }

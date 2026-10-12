@@ -7,38 +7,60 @@
 
 import Foundation
 
-/// 점수 방식: 엔진 원래 점수 / 만능 닮은꼴 보정 점수(`HubnessCorrection`)
+/// 점수 방식: 엔진 원래 점수 / 만능 닮은꼴 보정(세기별, `HubnessCorrection`)
 public enum CalibrationScoreMode: String, Sendable, Hashable, CaseIterable {
     case raw
-    case hubnessCorrected
+    case hubness25
+    case hubness50
+    case hubness100
+
+    /// 보정 세기 0...1
+    public var hubnessWeight: Double {
+        switch self {
+        case .raw: 0
+        case .hubness25: 0.25
+        case .hubness50: 0.5
+        case .hubness100: 1
+        }
+    }
 }
 
-/// 평가 실행 결과: 측정값을 들고 있어 분위·점수 방식만 바꿔 다시 계산할 수 있다.
+/// 평가 실행 결과: 방식별 측정값을 들고 있어 분위·방식만 바꿔 다시 계산할 수 있다.
 public struct CalibrationRun: Sendable, Hashable {
-    public let calibration: [SampleMeasurement]
-    public let holdout: [SampleMeasurement]
-    /// 같은 그림을 닮은꼴 보정 점수로 잰 값. 엔진이 지원하지 않으면 비어 있다.
-    public let correctedCalibration: [SampleMeasurement]
-    public let correctedHoldout: [SampleMeasurement]
+    public struct Measurements: Sendable, Hashable {
+        public let calibration: [SampleMeasurement]
+        public let holdout: [SampleMeasurement]
+
+        public init(calibration: [SampleMeasurement], holdout: [SampleMeasurement]) {
+            self.calibration = calibration
+            self.holdout = holdout
+        }
+    }
+
+    public let byMode: [CalibrationScoreMode: Measurements]
     public let engineID: String
 
-    public init(calibration: [SampleMeasurement], holdout: [SampleMeasurement],
-                correctedCalibration: [SampleMeasurement] = [], correctedHoldout: [SampleMeasurement] = [], engineID: String) {
-        self.calibration = calibration
-        self.holdout = holdout
-        self.correctedCalibration = correctedCalibration
-        self.correctedHoldout = correctedHoldout
+    public init(byMode: [CalibrationScoreMode: Measurements], engineID: String) {
+        self.byMode = byMode
         self.engineID = engineID
     }
 
+    /// 기존 점수만 있는 실행
+    public init(calibration: [SampleMeasurement], holdout: [SampleMeasurement], engineID: String) {
+        self.init(byMode: [.raw: Measurements(calibration: calibration, holdout: holdout)], engineID: engineID)
+    }
+
+    /// 측정한 방식(선언 순서)
+    public var availableModes: [CalibrationScoreMode] {
+        CalibrationScoreMode.allCases.filter { byMode[$0] != nil }
+    }
+
     /// 닮은꼴 보정 결과가 있는지
-    public var supportsCorrection: Bool { !correctedCalibration.isEmpty }
+    public var supportsCorrection: Bool { availableModes.count > 1 }
 
     public func measurements(_ mode: CalibrationScoreMode) -> (calibration: [SampleMeasurement], holdout: [SampleMeasurement]) {
-        switch mode {
-        case .raw: (calibration, holdout)
-        case .hubnessCorrected: (correctedCalibration, correctedHoldout)
-        }
+        let measurements = byMode[mode]
+        return (measurements?.calibration ?? [], measurements?.holdout ?? [])
     }
 
     public func report(mode: CalibrationScoreMode = .raw, highPercentile: Double) -> CalibrationReport? {
@@ -70,7 +92,7 @@ public struct DefaultRunCalibrationUseCase: RunCalibrationUseCase {
         let (calibration, holdout) = CalibrationEvaluator.split(all)
         let ordered = calibration + holdout
         let clock = ContinuousClock()
-        var measurements: [SampleMeasurement] = [], corrected: [SampleMeasurement] = []
+        var measured: [CalibrationScoreMode: [SampleMeasurement]] = [:]
         var supportsCorrection = true
         for (index, sample) in ordered.enumerated() {
             try Task.checkCancellation()
@@ -78,17 +100,19 @@ public struct DefaultRunCalibrationUseCase: RunCalibrationUseCase {
             let scored = try await scorer.rawScores(for: sample.sketch)
             let elapsed = start.duration(to: clock.now)
             let seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
-            measurements.append(.make(sample: sample, scored: scored, seconds: seconds))
             supportsCorrection = supportsCorrection && scored.allSatisfy { $0.hubness != nil }
-            corrected.append(.make(sample: sample, scored: HubnessCorrection.corrected(scored), seconds: seconds))
+            for mode in CalibrationScoreMode.allCases {
+                let modeScores = HubnessCorrection.corrected(scored, weight: mode.hubnessWeight)
+                measured[mode, default: []].append(.make(sample: sample, scored: modeScores, seconds: seconds))
+            }
             progress(Double(index + 1) / Double(max(ordered.count, 1)))
         }
-        return CalibrationRun(
-            calibration: Array(measurements.prefix(calibration.count)),
-            holdout: Array(measurements.dropFirst(calibration.count)),
-            correctedCalibration: supportsCorrection ? Array(corrected.prefix(calibration.count)) : [],
-            correctedHoldout: supportsCorrection ? Array(corrected.dropFirst(calibration.count)) : [],
-            engineID: scorer.engineID
-        )
+        let modes = supportsCorrection ? CalibrationScoreMode.allCases : [.raw]
+        var byMode: [CalibrationScoreMode: CalibrationRun.Measurements] = [:]
+        for mode in modes {
+            let all = measured[mode] ?? []
+            byMode[mode] = .init(calibration: Array(all.prefix(calibration.count)), holdout: Array(all.dropFirst(calibration.count)))
+        }
+        return CalibrationRun(byMode: byMode, engineID: scorer.engineID)
     }
 }

@@ -134,7 +134,7 @@ struct RunCalibrationUseCaseTests {
 
         let run = try await DefaultRunCalibrationUseCase(samples: ListSamples(samples), scorer: FakeScorer()).execute { progress.set($0) }
 
-        #expect(run.calibration.count == 2 && run.holdout.count == 2)
+        #expect(run.measurements(.raw).calibration.count == 2 && run.measurements(.raw).holdout.count == 2)
         #expect(run.engineID == "fake")
         #expect(progress.value == 1)
         let report = try #require(run.report(highPercentile: 0.5))
@@ -142,7 +142,8 @@ struct RunCalibrationUseCaseTests {
         #expect(report.recommended == ScoreCalibrator(sLow: 0.4, sHigh: 0.9))
 
         #expect(run.supportsCorrection)
-        let corrected = try #require(run.report(mode: .hubnessCorrected, highPercentile: 0.5))
+        #expect(run.availableModes == CalibrationScoreMode.allCases)
+        let corrected = try #require(run.report(mode: .hubness100, highPercentile: 0.5))
         #expect(corrected.holdout.top1 == 1)
         // 보정 점수: 정답 2×0.9 − r(그림) − 0.3, 오답은 더 낮다.
         #expect(corrected.recommended.sHigh > corrected.recommended.sLow)

@@ -27,6 +27,8 @@ final class EvaluationRunViewModel {
 
     private(set) var state: State = .idle
     var highPercentile = 0.5
+    /// 화면에 보여 줄 점수 방식(기존 / 닮은꼴 보정)
+    var scoreMode: CalibrationScoreMode = .hubness50
 
     let currentCalibrator: ScoreCalibrator
     private let prepareIndex: any PrepareSymbolIndexUseCase
@@ -46,9 +48,16 @@ final class EvaluationRunViewModel {
         if case .finished(let run) = state { run } else { nil }
     }
 
-    /// 지금 고른 분위로 계산한 보고서. 그림이 부족하면 nil
+    /// 지금 고른 분위·점수 방식으로 계산한 보고서. 그림이 부족하면 nil
     var report: CalibrationReport? {
-        run?.report(highPercentile: highPercentile)
+        guard let run else { return nil }
+        return run.report(mode: run.availableModes.contains(scoreMode) ? scoreMode : .raw, highPercentile: highPercentile)
+    }
+
+    /// 두 방식 나란히 비교(같은 그림·같은 분위)
+    var comparison: [(mode: CalibrationScoreMode, report: CalibrationReport)] {
+        guard let run else { return [] }
+        return run.availableModes.compactMap { mode in run.report(mode: mode, highPercentile: highPercentile).map { (mode, $0) } }
     }
 
     func start() async {
@@ -73,47 +82,69 @@ final class EvaluationRunViewModel {
 
     // MARK: - 내보내기
 
-    /// 공유 시트로 내보낼 Markdown 보고서
+    /// 공유 시트로 내보낼 Markdown 보고서(두 점수 방식 모두)
     var exportText: String {
-        guard let run, let report else { return "평가 그림이 부족해 보정값을 계산하지 못했습니다." }
+        guard let run, !comparison.isEmpty else { return "평가 그림이 부족해 보정값을 계산하지 못했습니다." }
         var lines = [
             "# Symbol Sketch 보정 평가",
             "",
             "- 엔진: `\(run.engineID)`",
-            "- 그림: 보정용 \(report.calibrationCount)장 · 시험용 \(report.holdoutCount)장 · 제외 \(report.skippedCount)장",
-            "- sHigh 분위: \(Self.percentText(report.highPercentile))",
-            "- 추천 sLow \(Self.score(report.recommended.sLow)) · sHigh \(Self.score(report.recommended.sHigh))"
-                + " (현재 \(Self.score(currentCalibrator.sLow)) · \(Self.score(currentCalibrator.sHigh)))",
-            "- 검색 시간 평균 \(Self.seconds(report.meanSeconds)) · 최대 \(Self.seconds(report.maxSeconds))",
+            "- sHigh 분위: \(Self.percentText(highPercentile))",
+            "- 현재 보정값 sLow \(Self.score(currentCalibrator.sLow)) · sHigh \(Self.score(currentCalibrator.sHigh))",
             "",
-            "## 시험용 결과",
+            "## 방식 비교(시험용)",
             "",
-            "| 작성자 | 장수 | Top1 | Top3 | Top10 | 정답 90%+ | 오답 90%+ | 정답 중앙값 |",
+            "| 방식 | 장수 | Top1 | Top3 | Top10 | 정답 90%+ | 오답 90%+ | 정답 중앙값 |",
             "| --- | --- | --- | --- | --- | --- | --- | --- |",
-            Self.row("전체", report.holdout),
         ]
-        lines += report.byAuthor.keys.sorted().map { Self.row($0, report.byAuthor[$0]!) }
-        lines += ["", "## 엄격도별 결과(엉뚱한 1위가 90%를 넘는 비율 목표)", "",
-                  "| 목표 | sHigh | 정답 90%+ | 오답 90%+ | 정답 중앙값 |", "| --- | --- | --- | --- | --- |"]
-        lines += report.tradeOffs.map {
-            "| \(Self.percentText($0.targetWrongRate)) | \(Self.score($0.calibrator.sHigh)) | \(Self.percentText($0.holdout.targetBadgeRate))"
-                + " | \(Self.percentText($0.holdout.wrongBadgeRate)) | \($0.holdout.medianTargetPercent.map { "\($0)%" } ?? "-") |"
+        lines += comparison.map { Self.row(Self.title($0.mode), $0.report.holdout) }
+        for (mode, report) in comparison {
+            lines += [
+                "",
+                "# \(Self.title(mode))",
+                "",
+                "- 그림: 보정용 \(report.calibrationCount)장 · 시험용 \(report.holdoutCount)장 · 제외 \(report.skippedCount)장",
+                "- 추천 sLow \(Self.score(report.recommended.sLow)) · sHigh \(Self.score(report.recommended.sHigh))",
+                "- 검색 시간 평균 \(Self.seconds(report.meanSeconds)) · 최대 \(Self.seconds(report.maxSeconds))",
+                "",
+                "## 작성자별(시험용)",
+                "",
+                "| 작성자 | 장수 | Top1 | Top3 | Top10 | 정답 90%+ | 오답 90%+ | 정답 중앙값 |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- |",
+            ]
+            lines += report.byAuthor.keys.sorted().map { Self.row($0, report.byAuthor[$0]!) }
+            lines += ["", "## 엄격도별 결과(엉뚱한 1위가 90%를 넘는 비율 목표)", "",
+                      "| 목표 | sHigh | 정답 90%+ | 오답 90%+ | 정답 중앙값 |", "| --- | --- | --- | --- | --- |"]
+            lines += report.tradeOffs.map {
+                "| \(Self.percentText($0.targetWrongRate)) | \(Self.score($0.calibrator.sHigh)) | \(Self.percentText($0.holdout.targetBadgeRate))"
+                    + " | \(Self.percentText($0.holdout.wrongBadgeRate)) | \($0.holdout.medianTargetPercent.map { "\($0)%" } ?? "-") |"
+            }
+            lines += ["", "## 오답인데 90% 이상이 자주 나온 심볼", "", "| 심볼 | 복잡도 | 횟수 |", "| --- | --- | --- |"]
+            lines += report.intruders.map { "| \($0.name) | \(Self.complexity($0.complexity)) | \($0.count) |" }
         }
-        lines += ["", "## 오답인데 90% 이상이 자주 나온 심볼", "", "| 심볼 | 복잡도 | 횟수 |", "| --- | --- | --- |"]
-        lines += report.intruders.map { "| \($0.name) | \(Self.complexity($0.complexity)) | \($0.count) |" }
-        lines += ["", "## 가장 단순한 정답 심볼", "", "| 심볼 | 복잡도 |", "| --- | --- |"]
-        lines += report.simplestTargets.map { "| \($0.name) | \(Self.complexity($0.complexity)) |" }
-        lines += ["", "## 그림별 원시 점수(CSV)", "", "```csv", Self.csvHeader]
-        lines += run.calibration.map { Self.csvRow("calibration", $0) } + run.holdout.map { Self.csvRow("holdout", $0) }
+        lines += ["", "## 그림별 점수(CSV)", "", "```csv", Self.csvHeader]
+        for mode in comparison.map(\.mode) {
+            let (calibration, holdout) = run.measurements(mode)
+            lines += calibration.map { Self.csvRow(mode, "calibration", $0) } + holdout.map { Self.csvRow(mode, "holdout", $0) }
+        }
         lines += ["```"]
         return lines.joined(separator: "\n")
     }
 
-    static let csvHeader = "half,author,target,targetScore,targetRank,targetComplexity,wrongMedian,seconds,topWrong(name:score:complexity|…)"
+    static func title(_ mode: CalibrationScoreMode) -> String {
+        switch mode {
+        case .raw: "기존 점수"
+        case .hubness25: "닮은꼴 25%"
+        case .hubness50: "닮은꼴 50%"
+        case .hubness100: "닮은꼴 100%"
+        }
+    }
 
-    static func csvRow(_ half: String, _ m: SampleMeasurement) -> String {
+    static let csvHeader = "mode,half,author,target,targetScore,targetRank,targetComplexity,wrongMedian,seconds,topWrong(name:score:complexity|…)"
+
+    static func csvRow(_ mode: CalibrationScoreMode, _ half: String, _ m: SampleMeasurement) -> String {
         let wrong = m.topWrong.map { "\($0.name):\(score($0.score)):\(complexity($0.complexity))" }.joined(separator: "|")
-        return [half, m.author, m.targetName, m.targetScore.map(score) ?? "", m.targetRank.map(String.init) ?? "",
+        return [mode.rawValue, half, m.author, m.targetName, m.targetScore.map(score) ?? "", m.targetRank.map(String.init) ?? "",
                 complexity(m.targetComplexity), score(m.wrongMedian), String(format: "%.4f", m.seconds), wrong]
             .map { $0.contains(",") ? "\"\($0)\"" : $0 }
             .joined(separator: ",")

@@ -28,7 +28,27 @@ struct EvaluationRunScreen: View {
                 status
             }
 
-            if viewModel.run != nil {
+            if let run = viewModel.run {
+                if run.supportsCorrection {
+                    Section {
+                        ForEach(viewModel.comparison, id: \.mode) { item in
+                            value(EvaluationRunViewModel.title(item.mode),
+                                  [item.report.holdout.top1, item.report.holdout.top3, item.report.holdout.top10]
+                                    .map(EvaluationRunViewModel.percentText).joined(separator: " · "),
+                                  detail: "Top 1 · 3 · 10, 10위 밖 \(EvaluationRunViewModel.percentText(1 - item.report.holdout.top10))")
+                        }
+                        Picker("점수 방식", selection: $viewModel.scoreMode) {
+                            ForEach(run.availableModes, id: \.self) { mode in
+                                Text(EvaluationRunViewModel.title(mode)).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    } header: {
+                        Text("방식 비교(시험용)")
+                    } footer: {
+                        Text("아래 결과는 고른 점수 방식 기준이에요.")
+                    }
+                }
                 Section("100% 기준(sHigh)") {
                     Picker("정답 점수 분위", selection: $viewModel.highPercentile) {
                         Text("중앙값").tag(0.5)
