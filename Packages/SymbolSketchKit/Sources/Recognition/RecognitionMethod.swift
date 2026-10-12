@@ -18,7 +18,7 @@ public enum RecognitionMethod: String, Sendable, CaseIterable {
 
     /// 유사도 % 보정값(기획서 9.5).
     /// - B 윤곽선(앱이 쓰는 방식): 실기기 평가셋 102장으로 정한 값(계획서 7장 결정 14, 2026-10-12).
-    ///   닮은꼴 보정 점수 기준이므로 `hubnessWeight`와 짝을 이룬다. 둘 중 하나를 바꾸면 평가 실행으로 다시 정한다.
+    ///   닮은꼴 보정 점수 기준이므로 `scoreWeights`와 짝을 이룬다. 둘 중 하나를 바꾸면 평가 실행으로 다시 정한다.
     /// - A·B 채움: 비교용으로만 남긴 방식이라 임시 값.
     public var calibrator: ScoreCalibrator {
         switch self {
@@ -32,11 +32,12 @@ public enum RecognitionMethod: String, Sendable, CaseIterable {
         }
     }
 
-    /// 만능 닮은꼴 보정 세기(`HubnessCorrection`). 0이면 보정하지 않는다.
-    public var hubnessWeight: Double {
+    /// 점수 보정 세기(`ScoreAdjustment`): 만능 닮은꼴 보정, 방향 보정. 0이면 하지 않는다.
+    /// 방향 보정 세기는 평가 실행으로 정하기 전이라 아직 0이다.
+    public var scoreWeights: ScoreWeights {
         switch self {
-        case .chamfer, .visionFilled: 0
-        case .visionOutline: 0.25
+        case .chamfer, .visionFilled: .none
+        case .visionOutline: ScoreWeights(hubness: 0.25, layout: 0)
         }
     }
 

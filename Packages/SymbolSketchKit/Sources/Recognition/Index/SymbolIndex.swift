@@ -19,11 +19,17 @@ public struct SymbolIndex: Sendable, Hashable {
     public let complexity: [Float]
     /// 심볼별 "만능 닮은꼴" 정도: 가장 닮은 다른 심볼 k개의 평균 코사인(`HubnessCorrection`)
     public let hubness: [Float]
+    /// 잉크 배치(`InkLayout`) 한 개의 길이(8×8 = 64)
+    public let layoutDimension: Int
+    /// `names.count × layoutDimension` 행렬(행 우선). 좌우·상하 방향을 구분하는 데 쓴다.
+    public let layouts: [Float]
     public let dimension: Int
     /// `names.count × dimension` 행렬(행 우선)
     public let vectors: [Float]
 
-    public init(engineID: String, osVersion: String, names: [String], complexity: [Float], hubness: [Float], dimension: Int, vectors: [Float]) {
+    public init(engineID: String, osVersion: String, names: [String], complexity: [Float], hubness: [Float],
+                layoutDimension: Int, layouts: [Float], dimension: Int, vectors: [Float]) {
+        precondition(layouts.count == names.count * layoutDimension, "layouts 크기가 names × layoutDimension과 맞지 않는다")
         precondition(complexity.count == names.count, "complexity 개수가 names와 맞지 않는다")
         precondition(hubness.count == names.count, "hubness 개수가 names와 맞지 않는다")
         precondition(vectors.count == names.count * dimension, "vectors 크기가 names × dimension과 맞지 않는다")
@@ -32,6 +38,8 @@ public struct SymbolIndex: Sendable, Hashable {
         self.names = names
         self.complexity = complexity
         self.hubness = hubness
+        self.layoutDimension = layoutDimension
+        self.layouts = layouts
         self.dimension = dimension
         self.vectors = vectors
     }

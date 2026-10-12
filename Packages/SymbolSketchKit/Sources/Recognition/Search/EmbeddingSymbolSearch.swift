@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Accelerate
 import Domain
 
 public enum SymbolSearchError: Error, Sendable, Equatable {
@@ -18,22 +19,22 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
     private let pipeline: EmbeddingPipeline
     private let store: SymbolIndexStore
     private let calibrator: ScoreCalibrator
-    /// 만능 닮은꼴 보정 세기(0이면 원래 코사인 그대로)
-    private let hubnessWeight: Double
+    /// 점수 보정 세기(닮은꼴·방향, 모두 0이면 원래 코사인 그대로)
+    private let weights: ScoreWeights
     private var loaded: (index: SymbolIndex, engine: VectorSearchEngine, families: [String])?
 
     public nonisolated let engineID: String
 
-    public init(pipeline: EmbeddingPipeline, store: SymbolIndexStore, calibrator: ScoreCalibrator, hubnessWeight: Double = 0) {
+    public init(pipeline: EmbeddingPipeline, store: SymbolIndexStore, calibrator: ScoreCalibrator, weights: ScoreWeights = .none) {
         self.pipeline = pipeline
         self.store = store
         self.calibrator = calibrator
-        self.hubnessWeight = hubnessWeight
+        self.weights = weights
         self.engineID = pipeline.engineID
     }
 
     public func search(sketch: Sketch, limit: Int) async throws -> [SymbolMatch] {
-        let scored = HubnessCorrection.corrected(try await rawScores(for: sketch), weight: hubnessWeight)
+        let scored = ScoreAdjustment.adjusted(try await rawScores(for: sketch), weights: weights)
         return VariantGrouper.group(scored, limit: limit).map { group in
             SymbolMatch(
                 name: group.representative.name,
@@ -49,12 +50,24 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
         let loaded = try loadIfNeeded()
         let pipeline = pipeline
         // Vision은 스레드를 오래 붙잡으므로 GCD 스레드에서 돌린다(BlockingWork 참고).
-        guard let query = try await BlockingWork.run({ try pipeline.embed(sketch) }) else { return [] }
-        let scores = loaded.engine.scores(for: query)
+        guard let query = try await BlockingWork.run({ try pipeline.embedWithLayout(sketch) }) else { return [] }
+        let scores = loaded.engine.scores(for: query.vector)
+        let layoutScores = Self.layoutScores(query.layout, index: loaded.index)
         return loaded.index.names.indices.map { index in
             ScoredSymbol(name: loaded.index.names[index], family: loaded.families[index], score: Double(scores[index]),
-                         complexity: Double(loaded.index.complexity[index]), hubness: Double(loaded.index.hubness[index]))
+                         complexity: Double(loaded.index.complexity[index]), hubness: Double(loaded.index.hubness[index]),
+                         layout: layoutScores.map { Double($0[index]) })
         }
+    }
+
+    /// 그림과 모든 심볼의 잉크 배치 코사인(`InkLayout`). 인덱스에 배치가 없으면 nil.
+    private static func layoutScores(_ query: [Float], index: SymbolIndex) -> [Float]? {
+        let dimension = index.layoutDimension
+        guard dimension > 0, query.count == dimension, index.layouts.count == index.count * dimension else { return nil }
+        var result = [Float](repeating: 0, count: index.count)
+        // (count × dimension) · (dimension × 1). 모두 길이 1이라 내적이 코사인이다.
+        vDSP_mmul(index.layouts, 1, query, 1, &result, 1, vDSP_Length(index.count), 1, vDSP_Length(dimension))
+        return result
     }
 
     /// 인덱스를 다시 만든 뒤 호출해 새 파일을 읽게 한다.

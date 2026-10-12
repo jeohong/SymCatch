@@ -31,19 +31,32 @@ public struct EmbeddingPipeline: Sendable {
 
     /// 빈 그림이면 nil.
     func embed(_ sketch: Sketch) throws -> [Float]? {
-        guard let image = rasterizer.image(for: sketch) else { return nil }
-        return try embedder.embed(image)
+        try embedWithLayout(sketch)?.vector
+    }
+
+    /// 특징 벡터와 잉크 배치(`InkLayout`)를 함께 만든다. 빈 그림이면 nil.
+    func embedWithLayout(_ sketch: Sketch) throws -> (vector: [Float], layout: [Float])? {
+        guard let bitmap = rasterizer.bitmap(for: sketch), let image = bitmap.makeCGImage() else { return nil }
+        return (try embedder.embed(image), InkLayout.descriptor(bitmap))
     }
 
     /// 심볼을 렌더링할 포인트 크기(`SymbolImageSource`에 넘김)
     var symbolPointSize: CGFloat { renderer.renderPointSize }
 
-    /// `SymbolImageSource`가 만든 심볼 이미지를 임베딩한다. 뱃지 판정용 복잡도도 함께 돌려준다.
-    func embedSymbol(_ symbol: CGImage) throws -> (vector: [Float], complexity: Float)? {
+    /// `SymbolImageSource`가 만든 심볼 이미지를 임베딩한다. 복잡도와 잉크 배치(모델이 보는 이미지 기준)도 함께 돌려준다.
+    func embedSymbol(_ symbol: CGImage) throws -> SymbolEmbedding? {
         guard let bitmap = renderer.bitmap(from: symbol), let image = bitmap.makeCGImage() else { return nil }
         let outline = symbolStyle == .outline ? bitmap : bitmap.outlined(thickness: Int(options.lineWidth.rounded()))
-        return (try embedder.embed(image), SymbolComplexity.measure(outline: outline))
+        return SymbolEmbedding(vector: try embedder.embed(image), complexity: SymbolComplexity.measure(outline: outline),
+                               layout: InkLayout.descriptor(bitmap))
     }
+}
+
+/// 심볼 하나를 인덱스에 넣을 값
+struct SymbolEmbedding: Sendable {
+    let vector: [Float]
+    let complexity: Float
+    let layout: [Float]
 }
 
 /// 심볼 모양이 얼마나 복잡한지(0...1). `circle`, `minus`처럼 너무 단순한 심볼은

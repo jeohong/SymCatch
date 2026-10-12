@@ -72,16 +72,16 @@ struct EmbeddingSymbolSearchTests {
         #expect(results.map(\.similarity) == results.map(\.similarity).sorted(by: >))
     }
 
-    @Test func 닮은꼴_보정_세기를_주면_보정한_점수로_찾는다() async throws {
+    @Test func 보정_세기를_주면_보정한_점수로_찾는다() async throws {
         let store = temporaryIndexStore()
         for try await _ in SymbolIndexBuilder(catalog: catalog, pipeline: pipeline, store: store, osVersion: "27.1").build() {}
         let calibrator = ScoreCalibrator(sLow: -1, sHigh: 1)
         let plain = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: calibrator)
-        let corrected = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: calibrator, hubnessWeight: 0.25)
+        let corrected = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: calibrator, weights: ScoreWeights(hubness: 0.25, layout: 0.1))
 
         let raw = try await plain.rawScores(for: TestSketches.circle)
-        #expect(raw.allSatisfy { $0.hubness != nil })                   // 인덱스에 닮은꼴 정도가 들어 있다
-        let expected = VariantGrouper.group(HubnessCorrection.corrected(raw, weight: 0.25), limit: 10).map(\.score)
+        #expect(raw.allSatisfy { $0.hubness != nil && $0.layout != nil })   // 인덱스에 닮은꼴 정도·잉크 배치가 들어 있다
+        let expected = VariantGrouper.group(ScoreAdjustment.adjusted(raw, weights: ScoreWeights(hubness: 0.25, layout: 0.1)), limit: 10).map(\.score)
         #expect(try await corrected.search(sketch: TestSketches.circle, limit: 10).map(\.score) == expected)
         #expect(try await plain.search(sketch: TestSketches.circle, limit: 10).map(\.score) == VariantGrouper.group(raw, limit: 10).map(\.score))
     }

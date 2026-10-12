@@ -22,6 +22,8 @@ struct SymbolIndexStoreTests {
         names: ["heart", "star.fill", "한글.이름"],
         complexity: [0.4, 0.7, 0.1],
         hubness: [0.81, 0.5, 0.33],
+        layoutDimension: 2,
+        layouts: [0.5, -0.5, 0.25, 0.75, -1, 0],
         dimension: 2,
         vectors: [0.5, -0.25, 1, 0, 0.125, 0.75]
     )

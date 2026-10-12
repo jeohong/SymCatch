@@ -18,12 +18,13 @@ public enum SymbolIndexStoreError: Error, Sendable, Equatable {
 /// 파일 형식(리틀 엔디언):
 /// ```
 /// "SSIX" | formatVersion u32 | engineID str | osVersion str | count u32 | dimension u32
-/// names: str × count | complexity: f32 × count | hubness: f32 × count | vectors: f16 × count × dimension
-/// (2판: hubness 추가. 1판 파일은 `unsupportedFormat` → 인덱스를 다시 만든다)
+/// names: str × count | complexity: f32 × count | hubness: f32 × count
+/// layoutDimension u32 | layouts: f16 × count × layoutDimension | vectors: f16 × count × dimension
+/// (2판: hubness 추가, 3판: 잉크 배치 추가. 이전 판 파일은 `unsupportedFormat` → 인덱스를 다시 만든다)
 /// str = 바이트 길이 u32 + UTF-8
 /// ```
 public struct SymbolIndexStore: Sendable {
-    public static let formatVersion: UInt32 = 2
+    public static let formatVersion: UInt32 = 3
     private static let magic = Data("SSIX".utf8)
 
     public let fileURL: URL
@@ -42,6 +43,8 @@ public struct SymbolIndexStore: Sendable {
         for name in index.names { data.append(string: name) }
         for value in index.complexity { data.append(le: value.bitPattern) }
         for value in index.hubness { data.append(le: value.bitPattern) }
+        data.append(le: UInt32(index.layoutDimension))
+        for value in index.layouts { data.append(le: Float16(value).bitPattern) }
         data.reserveCapacity(data.count + index.vectors.count * 2)
         for value in index.vectors { data.append(le: Float16(value).bitPattern) }
 
@@ -71,13 +74,16 @@ public struct SymbolIndexStore: Sendable {
         let names = try (0..<count).map { _ in try reader.readString() }
         let complexity = try (0..<count).map { _ in Float(bitPattern: try reader.read()) }
         let hubness = try (0..<count).map { _ in Float(bitPattern: try reader.read()) }
+        let layoutDimension = Int(try reader.read() as UInt32)
+        let layouts = try (0..<count * layoutDimension).map { _ in Float(Float16(bitPattern: try reader.read())) }
         var vectors = [Float](repeating: 0, count: count * dimension)
         for index in vectors.indices {
             vectors[index] = Float(Float16(bitPattern: try reader.read()))
         }
         guard reader.isAtEnd else { throw SymbolIndexStoreError.corrupted }
 
-        return SymbolIndex(engineID: engineID, osVersion: osVersion, names: names, complexity: complexity, hubness: hubness, dimension: dimension, vectors: vectors)
+        return SymbolIndex(engineID: engineID, osVersion: osVersion, names: names, complexity: complexity, hubness: hubness,
+                           layoutDimension: layoutDimension, layouts: layouts, dimension: dimension, vectors: vectors)
     }
 
     public func delete() throws {

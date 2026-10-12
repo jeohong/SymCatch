@@ -72,7 +72,7 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
         // 묶음 단위로 번갈아 돌려 메인 스레드를 오래 잡지 않는다.
         let pipeline = pipeline
         let total = names.count
-        var results: [(vector: [Float], complexity: Float)?] = []
+        var results: [SymbolEmbedding?] = []
         results.reserveCapacity(total)
         for start in stride(from: 0, to: total, by: Self.batchSize) {
             let batch = Array(names[start..<min(start + Self.batchSize, total)])
@@ -80,7 +80,7 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
             let part = try await BlockingWork.concurrentMap(count: images.count, progress: { done in
                 let overall = start + done
                 if overall % 50 == 0 || overall == total { progress(Double(overall) / Double(total)) }
-            }) { index -> (vector: [Float], complexity: Float)? in
+            }) { index -> SymbolEmbedding? in
                 guard let image = images[index] else { return nil }
                 return try pipeline.embedSymbol(image)
             }
@@ -88,7 +88,7 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
             try Task.checkCancellation()
         }
 
-        var keptNames: [String] = [], complexity: [Float] = [], vectors: [Float] = []
+        var keptNames: [String] = [], complexity: [Float] = [], vectors: [Float] = [], layouts: [Float] = []
         var dimension = 0
         for (name, result) in zip(names, results) {
             guard let result else { continue }
@@ -97,6 +97,7 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
             keptNames.append(name)
             complexity.append(result.complexity)
             vectors.append(contentsOf: result.vector)
+            layouts.append(contentsOf: result.layout)
         }
 
         // 만능 닮은꼴 정도: 모든 심볼 쌍의 코사인을 계산하므로 GCD 스레드에서 돌린다(BlockingWork 참고).
@@ -110,6 +111,8 @@ public struct SymbolIndexBuilder: SymbolIndexBuilding {
             names: keptNames,
             complexity: complexity,
             hubness: hubness,
+            layoutDimension: InkLayout.dimension,
+            layouts: layouts,
             dimension: dimension,
             vectors: vectors
         ))
