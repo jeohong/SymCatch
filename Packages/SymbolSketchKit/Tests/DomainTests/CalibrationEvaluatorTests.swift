@@ -72,6 +72,25 @@ struct CalibrationEvaluatorTests {
         #expect(abs(stricter.recommended.sHigh - 0.95) < 1e-9)
     }
 
+    @Test func 오답_허용률별로_sHigh를_정하고_엄격할수록_오답_뱃지가_줄어든다() throws {
+        func measure(_ target: Double, top: Double) -> SampleMeasurement {
+            SampleMeasurement(sampleID: UUID(), author: "A", targetName: "heart", targetScore: target, targetRank: 1, targetComplexity: 0.1,
+                              wrongMedian: 0.5, topWrong: [.init(name: "circle", score: top, complexity: 0.02)], seconds: 0.1)
+        }
+        let tops = stride(from: 0.60, through: 0.79, by: 0.01).map { $0 }        // 오답 1위 0.60…0.79
+        let calibration = tops.map { measure(0.8, top: $0) }
+        let holdout = [measure(0.85, top: 0.70), measure(0.75, top: 0.785), measure(0.9, top: 0.6)]
+
+        let report = try #require(CalibrationEvaluator.evaluate(calibration: calibration, holdout: holdout))
+        #expect(report.tradeOffs.map(\.targetWrongRate) == [0.01, 0.05, 0.1, 0.2])
+        let strict = report.tradeOffs[0], loose = report.tradeOffs[3]
+        #expect(strict.calibrator.sHigh > loose.calibrator.sHigh)
+        #expect(strict.holdout.wrongBadgeRate <= loose.holdout.wrongBadgeRate)
+        // 10% 목표: 보정용 1위 오답의 90% 분위 점수가 정확히 90%가 된다.
+        let line = try #require(CalibrationEvaluator.percentile(tops, 0.9))
+        #expect(report.tradeOffs[2].calibrator.percent(for: line) == 90)
+    }
+
     @Test func 분위수는_선형_보간() {
         #expect(CalibrationEvaluator.percentile([1, 2, 3, 4], 0.5) == 2.5)
         #expect(CalibrationEvaluator.percentile([3, 1, 2], 1) == 3)

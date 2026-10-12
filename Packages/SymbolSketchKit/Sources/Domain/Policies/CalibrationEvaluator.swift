@@ -110,6 +110,16 @@ public struct CalibrationReport: Sendable, Hashable {
     public let maxSeconds: Double
     /// 정답이 인덱스에 없어 뺀 그림 수
     public let skippedCount: Int
+    /// "엉뚱한 1위가 90%를 넘는 비율"을 목표로 sHigh를 정했을 때의 결과(엄격할수록 위)
+    public let tradeOffs: [TradeOff]
+
+    /// 오답 허용률 하나에 대한 보정값과 시험 결과
+    public struct TradeOff: Sendable, Hashable {
+        /// 보정용 그림에서 1위 오답이 90% 이상이 되는 비율 목표
+        public let targetWrongRate: Double
+        public let calibrator: ScoreCalibrator
+        public let holdout: Accuracy
+    }
 }
 
 /// 평가 그림으로 보정값(sLow·sHigh)을 정하고, 보정에 쓰지 않은 그림으로 결과를 잰다.
@@ -155,8 +165,24 @@ public enum CalibrationEvaluator {
             simplestTargets: simplestTargets(all),
             meanSeconds: seconds.isEmpty ? 0 : seconds.reduce(0, +) / Double(seconds.count),
             maxSeconds: seconds.max() ?? 0,
-            skippedCount: calibration.count + holdout.count - all.count
+            skippedCount: calibration.count + holdout.count - all.count,
+            tradeOffs: tradeOffs(calibration: validCalibration, holdout: validHoldout, sLow: sLow)
         )
+    }
+
+    /// 오답 허용률 목표별 보정값: 보정용 그림의 1위 오답 점수 중 (1 − 목표) 분위가 딱 90%가 되도록 sHigh를 정한다.
+    static func tradeOffs(calibration: [SampleMeasurement], holdout: [SampleMeasurement], sLow: Double,
+                          targets: [Double] = [0.01, 0.05, 0.1, 0.2]) -> [CalibrationReport.TradeOff] {
+        let topWrong = calibration.compactMap { $0.topWrong.first?.score }
+        let ratio = Double(badgeThreshold) / 100
+        return targets.compactMap { target in
+            guard let line = percentile(topWrong, 1 - target), line > sLow else { return nil }
+            // 90% 지점 = sLow + (sHigh − sLow) × 0.9 이므로 sHigh = sLow + (line − sLow) / 0.9
+            // 반올림 때문에 경계 점수가 89.5%로 올라가지 않도록 아주 조금 더 높인다.
+            let sHigh = sLow + (line - sLow) / ratio + 1e-9
+            let calibrator = ScoreCalibrator(sLow: sLow, sHigh: sHigh)
+            return CalibrationReport.TradeOff(targetWrongRate: target, calibrator: calibrator, holdout: accuracy(holdout, calibrator))
+        }
     }
 
     static func accuracy(_ measurements: [SampleMeasurement], _ calibrator: ScoreCalibrator) -> CalibrationReport.Accuracy {
