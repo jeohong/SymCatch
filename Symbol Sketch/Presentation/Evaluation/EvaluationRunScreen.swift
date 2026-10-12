@@ -112,9 +112,9 @@ struct EvaluationRunScreen: View {
         } header: {
             Text("엄격도별 결과")
         } footer: {
-            Text("엉뚱한 1위가 90%를 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 90% 이상인 비율")
+            Text("엉뚱한 1위가 뱃지 기준(\(BadgeTierPolicy.threshold)%)을 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 기준 이상인 비율")
         }
-        Section("오답인데 90% 이상이 자주 나온 심볼") {
+        Section("오답인데 뱃지 기준 이상이 자주 나온 심볼") {
             if report.intruders.isEmpty { Text("없음").foregroundStyle(DSColor.textSecondary) }
             ForEach(report.intruders, id: \.name) { intruder in
                 symbolRow(intruder.name, complexity: intruder.complexity, trailing: "\(intruder.count)회")
@@ -135,8 +135,8 @@ struct EvaluationRunScreen: View {
     private func accuracyRows(_ accuracy: CalibrationReport.Accuracy) -> some View {
         value("장수", "\(accuracy.count)", detail: nil)
         value("Top 1 · 3 · 10", [accuracy.top1, accuracy.top3, accuracy.top10].map(EvaluationRunViewModel.percentText).joined(separator: " · "), detail: nil)
-        value("정답 90% 이상", EvaluationRunViewModel.percentText(accuracy.targetBadgeRate), detail: "정답을 고르면 뱃지")
-        value("오답 90% 이상", EvaluationRunViewModel.percentText(accuracy.wrongBadgeRate), detail: "엉뚱한 뱃지 위험")
+        value("정답 기준 이상", EvaluationRunViewModel.percentText(accuracy.targetBadgeRate), detail: "정답을 고르면 뱃지")
+        value("오답 기준 이상", EvaluationRunViewModel.percentText(accuracy.wrongBadgeRate), detail: "엉뚱한 뱃지 위험")
         value("정답 유사도 중앙값", accuracy.medianTargetPercent.map { "\($0)%" } ?? "-", detail: nil)
     }
 

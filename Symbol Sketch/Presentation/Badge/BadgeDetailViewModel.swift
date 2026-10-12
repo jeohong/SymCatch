@@ -34,12 +34,11 @@ final class BadgeDetailViewModel {
 
     /// 다음 등급 안내
     var goalText: String {
-        switch badge?.tier {
-        case nil: String(localized: "유사도 90% 이상이면 브론즈 뱃지를 얻어요")
-        case .bronze: String(localized: "95% 이상이면 실버로 승급해요")
-        case .silver: String(localized: "98% 이상이면 골드로 승급해요")
-        case .gold: String(localized: "최고 등급을 달성했어요")
+        guard let tier = badge?.tier else {
+            return String(localized: "유사도 \(BadgeTier.bronze.minimumSimilarity)% 이상이면 브론즈 뱃지를 얻어요")
         }
+        guard let next = tier.next else { return String(localized: "최고 등급을 달성했어요") }
+        return String(localized: "\(next.minimumSimilarity)% 이상이면 \(next.displayName)로 승급해요")
     }
 
     /// 골드면 더 도전할 등급이 없다.

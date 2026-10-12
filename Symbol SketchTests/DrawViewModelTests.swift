@@ -256,13 +256,13 @@ struct DrawViewModelTests {
         #expect(viewModel.phase == .idle)
     }
 
-    @Test func 뱃지_표시는_90퍼센트_이상이고_보유_등급을_반영한다() async {
+    @Test func 뱃지_표시는_기준_이상이고_보유_등급을_반영한다() async {
         let owned = SymbolBadge(symbolName: "owned", tier: .silver, bestSimilarity: 96, bestSketch: drawn, earnedAt: .now)
         let viewModel = makeViewModel(search: StubSearch(outcome: .results([])), badges: StubBadges(badges: ["owned": owned]))
         await viewModel.refreshProgress()
 
-        #expect(viewModel.badgeHint(for: SymbolMatch(name: "a", variants: [], similarity: 90)) == .eligible(.bronze))
-        #expect(viewModel.badgeHint(for: SymbolMatch(name: "a", variants: [], similarity: 89)) == .none)
+        #expect(viewModel.badgeHint(for: SymbolMatch(name: "a", variants: [], similarity: 85)) == .eligible(.bronze))
+        #expect(viewModel.badgeHint(for: SymbolMatch(name: "a", variants: [], similarity: 84)) == .none)
         #expect(viewModel.badgeHint(for: SymbolMatch(name: "owned", variants: [], similarity: 92)) == .owned(.silver))
         #expect(viewModel.badgeHint(for: SymbolMatch(name: "owned", variants: [], similarity: 99)) == .eligible(.gold))
     }

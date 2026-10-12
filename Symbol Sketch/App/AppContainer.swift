@@ -185,9 +185,9 @@ final class AppContainer {
         if let pipeline = method.embeddingPipeline {
             let store = SymbolIndexStore(fileURL: indexDirectory.appending(path: "\(method.rawValue).index"))
             builder = SymbolIndexBuilder(catalog: symbolCatalog, pipeline: pipeline, store: store)
-            searcher = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: method.provisionalCalibrator)
+            searcher = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: method.calibrator, hubnessWeight: method.hubnessWeight)
         } else {
-            let chamfer = ChamferSymbolSearch(catalog: symbolCatalog, calibrator: method.provisionalCalibrator)
+            let chamfer = ChamferSymbolSearch(catalog: symbolCatalog, calibrator: method.calibrator)
             builder = ChamferIndexPreparer(search: chamfer)
             searcher = chamfer
         }
@@ -198,7 +198,7 @@ final class AppContainer {
             prepare: DefaultPrepareSymbolIndexUseCase(builder: builder),
             search: DefaultSearchSymbolsUseCase(searcher: searcher),
             scorer: searcher,
-            calibrator: method.provisionalCalibrator
+            calibrator: method.calibrator
         )
     }
 }

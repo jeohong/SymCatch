@@ -79,15 +79,15 @@ public struct CalibrationReport: Sendable, Hashable {
         public let top1: Double
         public let top3: Double
         public let top10: Double
-        /// 정답 점수를 보정했을 때 90% 이상인 비율(정답을 골랐을 때 뱃지를 받는 비율)
+        /// 정답 점수를 보정했을 때 뱃지 기준 이상인 비율(정답을 골랐을 때 뱃지를 받는 비율)
         public let targetBadgeRate: Double
-        /// 1위 오답이 90% 이상인 비율(엉뚱한 심볼로 뱃지를 받을 위험)
+        /// 1위 오답이 뱃지 기준 이상인 비율(엉뚱한 심볼로 뱃지를 받을 위험)
         public let wrongBadgeRate: Double
         /// 정답 점수 중앙값(보정 후 %)
         public let medianTargetPercent: Int?
     }
 
-    /// 단순 심볼 후보: 다른 그림에서 오답인데 90% 이상이 자주 나온 심볼
+    /// 단순 심볼 후보: 다른 그림에서 오답인데 뱃지 기준 이상이 자주 나온 심볼
     public struct Intruder: Sendable, Hashable {
         public let name: String
         public let complexity: Double?
@@ -110,12 +110,12 @@ public struct CalibrationReport: Sendable, Hashable {
     public let maxSeconds: Double
     /// 정답이 인덱스에 없어 뺀 그림 수
     public let skippedCount: Int
-    /// "엉뚱한 1위가 90%를 넘는 비율"을 목표로 sHigh를 정했을 때의 결과(엄격할수록 위)
+    /// "엉뚱한 1위가 뱃지 기준을 넘는 비율"을 목표로 sHigh를 정했을 때의 결과(엄격할수록 위)
     public let tradeOffs: [TradeOff]
 
     /// 오답 허용률 하나에 대한 보정값과 시험 결과
     public struct TradeOff: Sendable, Hashable {
-        /// 보정용 그림에서 1위 오답이 90% 이상이 되는 비율 목표
+        /// 보정용 그림에서 1위 오답이 뱃지 기준 이상이 되는 비율 목표
         public let targetWrongRate: Double
         public let calibrator: ScoreCalibrator
         public let holdout: Accuracy
@@ -170,14 +170,14 @@ public enum CalibrationEvaluator {
         )
     }
 
-    /// 오답 허용률 목표별 보정값: 보정용 그림의 1위 오답 점수 중 (1 − 목표) 분위가 딱 90%가 되도록 sHigh를 정한다.
+    /// 오답 허용률 목표별 보정값: 보정용 그림의 1위 오답 점수 중 (1 − 목표) 분위가 딱 뱃지 기준(%)이 되도록 sHigh를 정한다.
     static func tradeOffs(calibration: [SampleMeasurement], holdout: [SampleMeasurement], sLow: Double,
                           targets: [Double] = [0.01, 0.05, 0.1, 0.2]) -> [CalibrationReport.TradeOff] {
         let topWrong = calibration.compactMap { $0.topWrong.first?.score }
         let ratio = Double(badgeThreshold) / 100
         return targets.compactMap { target in
             guard let line = percentile(topWrong, 1 - target), line > sLow else { return nil }
-            // 90% 지점 = sLow + (sHigh − sLow) × 0.9 이므로 sHigh = sLow + (line − sLow) / 0.9
+            // 기준 지점 = sLow + (sHigh − sLow) × 기준/100 이므로 sHigh = sLow + (line − sLow) ÷ (기준/100)
             // 반올림 때문에 경계 점수가 89.5%로 올라가지 않도록 아주 조금 더 높인다.
             let sHigh = sLow + (line - sLow) / ratio + 1e-9
             let calibrator = ScoreCalibrator(sLow: sLow, sHigh: sHigh)

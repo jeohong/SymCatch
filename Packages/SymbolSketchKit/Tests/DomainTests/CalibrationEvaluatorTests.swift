@@ -86,9 +86,9 @@ struct CalibrationEvaluatorTests {
         let strict = report.tradeOffs[0], loose = report.tradeOffs[3]
         #expect(strict.calibrator.sHigh > loose.calibrator.sHigh)
         #expect(strict.holdout.wrongBadgeRate <= loose.holdout.wrongBadgeRate)
-        // 10% 목표: 보정용 1위 오답의 90% 분위 점수가 정확히 90%가 된다.
+        // 10% 목표: 보정용 1위 오답의 90% 분위 점수가 정확히 뱃지 기준(%)이 된다.
         let line = try #require(CalibrationEvaluator.percentile(tops, 0.9))
-        #expect(report.tradeOffs[2].calibrator.percent(for: line) == 90)
+        #expect(report.tradeOffs[2].calibrator.percent(for: line) == BadgeTierPolicy.threshold)
     }
 
     @Test func 분위수는_선형_보간() {

@@ -97,9 +97,9 @@ struct BadgeDetailViewModelTests {
     }
 
     @Test(arguments: [
-        (nil, "유사도 90% 이상이면 브론즈 뱃지를 얻어요", true),
-        (BadgeTier.bronze, "95% 이상이면 실버로 승급해요", true),
-        (.silver, "98% 이상이면 골드로 승급해요", true),
+        (nil, "유사도 85% 이상이면 브론즈 뱃지를 얻어요", true),
+        (BadgeTier.bronze, "90% 이상이면 실버로 승급해요", true),
+        (.silver, "95% 이상이면 골드로 승급해요", true),
         (.gold, "최고 등급을 달성했어요", false),
     ] as [(BadgeTier?, String, Bool)])
     func 등급별_안내와_도전_가능_여부(tier: BadgeTier?, goal: String, canChallenge: Bool) async {

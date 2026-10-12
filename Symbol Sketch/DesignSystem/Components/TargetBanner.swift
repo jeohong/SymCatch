@@ -54,9 +54,9 @@ struct TargetBanner: View {
     }
 
     private var subtitle: String {
-        guard let badge else { return String(localized: "아직 없는 뱃지 · 90% 이상으로 그려 보세요") }
-        let next = badge.tier == .bronze ? String(localized: "실버 95%") : String(localized: "골드 98%")
-        return String(localized: "현재 \(badge.tier.displayName) \(badge.bestSimilarity)% · \(next)에 도전")
+        guard let badge else { return String(localized: "아직 없는 뱃지 · \(BadgeTierPolicy.threshold)% 이상으로 그려 보세요") }
+        guard let next = badge.tier.next else { return String(localized: "현재 \(badge.tier.displayName) \(badge.bestSimilarity)%") }
+        return String(localized: "현재 \(badge.tier.displayName) \(badge.bestSimilarity)% · \(next.displayName) \(next.minimumSimilarity)%에 도전")
     }
 }
 

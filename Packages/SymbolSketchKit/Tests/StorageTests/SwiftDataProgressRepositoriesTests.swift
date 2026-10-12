@@ -150,7 +150,7 @@ struct ProgressPersistenceTests {
                 stats: SwiftDataUserStatsRepository(modelContainer: container),
                 calendar: Samples.utcCalendar
             )
-            let match = SymbolMatch(name: "heart", variants: [], similarity: 96)
+            let match = SymbolMatch(name: "heart", variants: [], similarity: 92)
             let outcome = try await useCase.execute(match: match, sketch: Samples.sketch, now: Samples.date())
             #expect(outcome.hasCelebration)
         }

@@ -89,12 +89,12 @@ final class EvaluationRunViewModel {
             "# Symbol Sketch 보정 평가",
             "",
             "- 엔진: `\(run.engineID)`",
-            "- sHigh 분위: \(Self.percentText(highPercentile))",
+            "- sHigh 분위: \(Self.percentText(highPercentile)) · 뱃지 기준 \(BadgeTierPolicy.threshold)%",
             "- 현재 보정값 sLow \(Self.score(currentCalibrator.sLow)) · sHigh \(Self.score(currentCalibrator.sHigh))",
             "",
             "## 방식 비교(시험용)",
             "",
-            "| 방식 | 장수 | Top1 | Top3 | Top10 | 정답 90%+ | 오답 90%+ | 정답 중앙값 |",
+            "| 방식 | 장수 | Top1 | Top3 | Top10 | 정답 기준+ | 오답 기준+ | 정답 중앙값 |",
             "| --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
         lines += comparison.map { Self.row(Self.title($0.mode), $0.report.holdout) }
@@ -109,17 +109,17 @@ final class EvaluationRunViewModel {
                 "",
                 "## 작성자별(시험용)",
                 "",
-                "| 작성자 | 장수 | Top1 | Top3 | Top10 | 정답 90%+ | 오답 90%+ | 정답 중앙값 |",
+                "| 작성자 | 장수 | Top1 | Top3 | Top10 | 정답 기준+ | 오답 기준+ | 정답 중앙값 |",
                 "| --- | --- | --- | --- | --- | --- | --- | --- |",
             ]
             lines += report.byAuthor.keys.sorted().map { Self.row($0, report.byAuthor[$0]!) }
-            lines += ["", "## 엄격도별 결과(엉뚱한 1위가 90%를 넘는 비율 목표)", "",
-                      "| 목표 | sHigh | 정답 90%+ | 오답 90%+ | 정답 중앙값 |", "| --- | --- | --- | --- | --- |"]
+            lines += ["", "## 엄격도별 결과(엉뚱한 1위가 뱃지 기준을 넘는 비율 목표)", "",
+                      "| 목표 | sHigh | 정답 기준+ | 오답 기준+ | 정답 중앙값 |", "| --- | --- | --- | --- | --- |"]
             lines += report.tradeOffs.map {
                 "| \(Self.percentText($0.targetWrongRate)) | \(Self.score($0.calibrator.sHigh)) | \(Self.percentText($0.holdout.targetBadgeRate))"
                     + " | \(Self.percentText($0.holdout.wrongBadgeRate)) | \($0.holdout.medianTargetPercent.map { "\($0)%" } ?? "-") |"
             }
-            lines += ["", "## 오답인데 90% 이상이 자주 나온 심볼", "", "| 심볼 | 복잡도 | 횟수 |", "| --- | --- | --- |"]
+            lines += ["", "## 오답인데 뱃지 기준 이상이 자주 나온 심볼", "", "| 심볼 | 복잡도 | 횟수 |", "| --- | --- | --- |"]
             lines += report.intruders.map { "| \($0.name) | \(Self.complexity($0.complexity)) | \($0.count) |" }
         }
         lines += ["", "## 그림별 점수(CSV)", "", "```csv", Self.csvHeader]

@@ -83,10 +83,10 @@ struct SymbolDetailViewModelTests {
     }
 
     @Test(arguments: [
-        (99, "골드 등급 구간이에요"),
-        (96, "실버 등급 구간이에요"),
-        (90, "브론즈 등급 구간이에요"),
-        (85, "뱃지까지 5% 남았어요"),
+        (95, "골드 등급 구간이에요"),
+        (94, "실버 등급 구간이에요"),
+        (85, "브론즈 등급 구간이에요"),
+        (80, "뱃지까지 5% 남았어요"),
     ])
     func 유사도_설명은_등급_구간을_따른다(similarity: Int, expected: String) {
         #expect(makeViewModel(similarity: similarity).similarityCaption == expected)

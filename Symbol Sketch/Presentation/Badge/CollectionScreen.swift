@@ -56,7 +56,7 @@ struct CollectionScreen: View {
     /// 뱃지가 하나도 없을 때(DESIGN_NOTES 7.2 권장: 안내 1줄 + 그리러 가기)
     private var emptyHint: some View {
         VStack(spacing: Spacing.m) {
-            Text("유사도 90% 이상인 심볼을 고르면 뱃지를 얻어요")
+            Text("유사도 \(BadgeTierPolicy.threshold)% 이상인 심볼을 고르면 뱃지를 얻어요")
                 .font(.subheadline)
                 .foregroundStyle(DSColor.textSecondary)
                 .multilineTextAlignment(.center)

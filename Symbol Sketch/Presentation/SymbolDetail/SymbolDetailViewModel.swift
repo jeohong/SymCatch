@@ -142,11 +142,9 @@ final class SymbolDetailViewModel {
     /// 비교 영역 아래 설명(기획서 3.1 등급 구간)
     var similarityCaption: String? {
         guard let similarity = request.similarity else { return nil }
-        switch similarity {
-        case 98...: return String(localized: "골드 등급 구간이에요")
-        case 95..<98: return String(localized: "실버 등급 구간이에요")
-        case 90..<95: return String(localized: "브론즈 등급 구간이에요")
-        default: return String(localized: "뱃지까지 \(90 - similarity)% 남았어요")
+        guard let tier = BadgeTierPolicy.tier(for: similarity) else {
+            return String(localized: "뱃지까지 \(BadgeTierPolicy.threshold - similarity)% 남았어요")
         }
+        return String(localized: "\(tier.displayName) 등급 구간이에요")
     }
 }

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 0~100% 유사도 막대. 90% 미만 accent, 이상 gold(기획서 7.3).
+/// 0~100% 유사도 막대. 뱃지 기준(85%) 미만 accent, 이상 gold(기획서 7.3).
 struct SimilarityBar: View {
     let percent: Int
     var height: CGFloat = Metrics.barHeight

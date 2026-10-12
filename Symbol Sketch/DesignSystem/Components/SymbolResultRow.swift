@@ -28,7 +28,7 @@ struct SymbolResultRow: View {
             .background(DSColor.cellElevated, in: RoundedRectangle(cornerRadius: Radius.card))
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.card)
-                    .strokeBorder(match.similarity >= 90 ? DSColor.gold : .clear, lineWidth: 2)
+                    .strokeBorder(match.similarity >= BadgeTierPolicy.threshold ? DSColor.gold : .clear, lineWidth: 2)
             )
             .contentShape(RoundedRectangle(cornerRadius: Radius.card))
             .accessibilityElement(children: .ignore)

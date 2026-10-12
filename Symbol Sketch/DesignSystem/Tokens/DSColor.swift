@@ -79,9 +79,9 @@ enum DSColor {
         }
     }
 
-    /// 유사도 막대·테두리 색: 90% 이상 골드, 그 외 accent
+    /// 유사도 막대·테두리 색: 뱃지 기준(85%) 이상 골드, 그 외 accent
     static func similarity(_ percent: Int) -> Color {
-        percent >= 90 ? gold : accent
+        percent >= BadgeTierPolicy.threshold ? gold : accent
     }
 }
 

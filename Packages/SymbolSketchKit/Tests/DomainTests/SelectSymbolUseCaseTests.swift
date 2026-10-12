@@ -47,9 +47,9 @@ struct SelectSymbolUseCaseTests {
         #expect(outcome.hasCelebration)
     }
 
-    @Test func 구십_이상을_고르면_새_뱃지와_명사수() async throws {
+    @Test func 기준_이상을_고르면_새_뱃지와_명사수() async throws {
         _ = try await useCase.execute(match: match("star", 50), sketch: Fixtures.sketch, now: Fixtures.date())
-        let outcome = try await useCase.execute(match: match("heart", 93), sketch: Fixtures.sketch, now: Fixtures.date(hours: 1))
+        let outcome = try await useCase.execute(match: match("heart", 87), sketch: Fixtures.sketch, now: Fixtures.date(hours: 1))
 
         guard case .newBadge(let badge) = outcome.badgeAward else {
             Issue.record("새 뱃지여야 한다: \(outcome.badgeAward)")
