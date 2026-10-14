@@ -82,3 +82,17 @@ extension Sketch {
         return Sketch(strokes: [points])
     }()
 }
+
+private func drawCanvasAreaPreview() -> some View {
+    VStack(spacing: Spacing.l) {
+        DrawCanvasArea(controller: SketchCanvasController(), isEmpty: true, isTooSmall: false) { _ in }
+            .frame(width: 300, height: 300)
+        DrawCanvasArea(controller: SketchCanvasController(), isEmpty: false, isTooSmall: true) { _ in }
+            .frame(width: 300, height: 300)
+    }
+    .padding(Spacing.screen)
+    .background(DSColor.bgPrimary)
+}
+
+#Preview("라이트") { drawCanvasAreaPreview().preferredColorScheme(.light) }
+#Preview("다크") { drawCanvasAreaPreview().preferredColorScheme(.dark) }

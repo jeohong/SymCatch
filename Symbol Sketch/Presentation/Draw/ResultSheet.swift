@@ -285,3 +285,15 @@ struct InvertedButtonStyle: ButtonStyle {
     }
 }
 
+#if DEBUG
+private func resultSheetPreview() -> some View {
+    let viewModel = DrawPreviewFixture.viewModel()
+    return ResultSheet(viewModel: viewModel)
+        .frame(height: 320)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .task { await viewModel.start() }
+}
+
+#Preview("라이트") { resultSheetPreview().preferredColorScheme(.light) }
+#Preview("다크") { resultSheetPreview().preferredColorScheme(.dark) }
+#endif

@@ -72,3 +72,8 @@ struct DrawScreen: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("라이트") { DrawScreen(viewModel: DrawPreviewFixture.viewModel()).preferredColorScheme(.light) }
+#Preview("다크") { DrawScreen(viewModel: DrawPreviewFixture.viewModel()).preferredColorScheme(.dark) }
+#endif

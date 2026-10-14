@@ -128,3 +128,16 @@ private struct FindButton: View {
         }
     }
 }
+
+private func drawToolbarPreview() -> some View {
+    VStack(spacing: Spacing.l) {
+        DrawToolbar(canvas: SketchCanvasController(), phase: .idle, canSearch: false) {}
+        DrawToolbar(canvas: SketchCanvasController(), phase: .waiting, canSearch: true) {}
+        DrawToolbar(canvas: SketchCanvasController(), phase: .searching(showsSkeleton: true), canSearch: true) {}
+    }
+    .padding(Spacing.screen)
+    .background(DSColor.bgPrimary)
+}
+
+#Preview("라이트") { drawToolbarPreview().preferredColorScheme(.light) }
+#Preview("다크") { drawToolbarPreview().preferredColorScheme(.dark) }
