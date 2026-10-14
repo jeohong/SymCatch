@@ -86,6 +86,20 @@ struct EmbeddingSymbolSearchTests {
         #expect(try await plain.search(sketch: TestSketches.circle, limit: 10).map(\.score) == VariantGrouper.group(raw, limit: 10).map(\.score))
     }
 
+    @Test func 인덱스를_다시_만들면_검색이_새_파일을_읽는다() async throws {
+        let store = temporaryIndexStore()
+        for try await _ in SymbolIndexBuilder(catalog: StubSymbolCatalog(names: ["circle", "triangle"]), pipeline: pipeline,
+                                              store: store, osVersion: "27.1").build() {}
+        let search = EmbeddingSymbolSearch(pipeline: pipeline, store: store, calibrator: RecognitionMethod.visionOutline.calibrator)
+        #expect(try await search.rawScores(for: TestSketches.circle).count == 2)
+
+        // 파일 수정 시각이 확실히 달라지도록 잠깐 기다린 뒤 다시 만든다.
+        try await Task.sleep(for: .milliseconds(1100))
+        for try await _ in SymbolIndexBuilder(catalog: StubSymbolCatalog(names: ["circle", "triangle", "minus"]), pipeline: pipeline,
+                                              store: store, osVersion: "27.1").build() {}
+        #expect(try await search.rawScores(for: TestSketches.circle).count == 3)
+    }
+
     /// 심볼 수가 CPU 코어 수보다 많아도 멈추지 않는다.
     /// (동기 Vision 작업이 Swift 동시성 스레드를 모두 차지해 교착되던 문제의 회귀 테스트)
     @Test(.timeLimit(.minutes(1)))

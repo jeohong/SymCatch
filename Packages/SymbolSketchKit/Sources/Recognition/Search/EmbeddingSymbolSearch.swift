@@ -22,6 +22,8 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
     /// 점수 보정 세기(닮은꼴·방향, 모두 0이면 원래 코사인 그대로)
     private let weights: ScoreWeights
     private var loaded: (index: SymbolIndex, engine: VectorSearchEngine, families: [String])?
+    /// 읽어 둔 인덱스 파일의 수정 시각(파일이 바뀌었는지 확인용)
+    private var loadedModificationDate: Date?
 
     public nonisolated let engineID: String
 
@@ -70,13 +72,10 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
         return result
     }
 
-    /// 인덱스를 다시 만든 뒤 호출해 새 파일을 읽게 한다.
-    public func invalidate() {
-        loaded = nil
-    }
-
     private func loadIfNeeded() throws -> (index: SymbolIndex, engine: VectorSearchEngine, families: [String]) {
-        if let loaded { return loaded }
+        // 인덱스를 다시 만들면(설정 "심볼 다시 준비하기", OS 업데이트) 파일이 바뀐다. 바뀌었으면 새로 읽는다.
+        let modified = store.modificationDate()
+        if let loaded, modified == loadedModificationDate { return loaded }
         let index: SymbolIndex
         do {
             index = try store.load()
@@ -86,6 +85,7 @@ public actor EmbeddingSymbolSearch: SymbolSearching, SymbolScoring {
         guard index.engineID == engineID else { throw SymbolSearchError.indexNotReady }
         let result = (index, VectorSearchEngine(index: index), index.names.map(VariantGrouper.family(of:)))
         loaded = result
+        loadedModificationDate = modified
         return result
     }
 }

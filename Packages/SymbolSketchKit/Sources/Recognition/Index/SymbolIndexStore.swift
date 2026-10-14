@@ -86,6 +86,11 @@ public struct SymbolIndexStore: Sendable {
                            layoutDimension: layoutDimension, layouts: layouts, dimension: dimension, vectors: vectors)
     }
 
+    /// 파일 수정 시각. 파일이 없으면 nil.
+    public func modificationDate() -> Date? {
+        (try? FileManager.default.attributesOfItem(atPath: fileURL.path))?[.modificationDate] as? Date
+    }
+
     public func delete() throws {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         try FileManager.default.removeItem(at: fileURL)
