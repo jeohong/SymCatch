@@ -12,13 +12,8 @@ import Domain
 /// 획을 떼고 0.6초 뒤 자동 검색, 0.3초가 넘으면 스켈레톤, 그림 부족이면 검색하지 않는다(기획서 2.1, 6장).
 @MainActor @Observable
 final class DrawViewModel {
-    /// 심볼 인덱스 준비 상태
-    enum Preparation: Equatable {
-        case checking
-        case preparing(progress: Double)
-        case ready
-        case failed(String)
-    }
+    /// 심볼 인덱스 준비 상태(`SymbolIndexPreparation`과 같다)
+    typealias Preparation = SymbolIndexPreparation.State
 
     /// 검색 진행 상태. 결과(`matches`)와 따로 두어, 새로 찾는 동안 이전 결과를 계속 보여 준다.
     enum Phase: Equatable {
@@ -31,12 +26,14 @@ final class DrawViewModel {
         case failed(String)
     }
 
-    private(set) var preparation: Preparation = .checking
+    /// 심볼 인덱스 준비(온보딩과 함께 쓴다)
+    let indexPreparation: SymbolIndexPreparation
+    var preparation: Preparation { indexPreparation.state }
     /// 설정에서 "심볼 다시 준비하기"로 다시 만드는 중인지(준비 문구가 달라진다)
-    private(set) var isRebuildingIndex = false
+    var isRebuildingIndex: Bool { indexPreparation.isRebuilding }
     #if DEBUG
     /// 개발용: 이번 실행에서 심볼 준비에 걸린 시간(초). 인덱스를 새로 만들 때만 채워진다.
-    private(set) var preparationSeconds: Double?
+    var preparationSeconds: Double? { indexPreparation.seconds }
     #endif
     private(set) var phase: Phase = .idle
     private(set) var matches: [SymbolMatch] = []
@@ -54,11 +51,9 @@ final class DrawViewModel {
 
     /// 진행 중인 자동 검색(테스트에서 끝나기를 기다릴 때 쓴다)
     private(set) var pendingSearch: Task<Void, Never>?
-    private var preparationTask: Task<Void, Never>?
     /// 결과 탭 후 저장 중인 작업(테스트에서 끝나기를 기다릴 때 쓴다)
     private(set) var pendingSelection: Task<Void, Never>?
 
-    private let prepareIndex: any PrepareSymbolIndexUseCase
     private let searchSymbols: any SearchSymbolsUseCase
     private let selectSymbol: any SelectSymbolUseCase
     private let fetchRecent: any FetchRecentRecordsUseCase
@@ -72,7 +67,8 @@ final class DrawViewModel {
     static let previewCount = 3
     static let recentCount = 5
 
-    init(
+    /// 준비를 따로 만들어 쓰는 경우(테스트·미리보기)
+    convenience init(
         prepareIndex: any PrepareSymbolIndexUseCase,
         searchSymbols: any SearchSymbolsUseCase,
         selectSymbol: any SelectSymbolUseCase,
@@ -83,7 +79,23 @@ final class DrawViewModel {
         debounce: Duration = .milliseconds(600),
         skeletonDelay: Duration = .milliseconds(300)
     ) {
-        self.prepareIndex = prepareIndex
+        self.init(indexPreparation: SymbolIndexPreparation(prepareIndex: prepareIndex), searchSymbols: searchSymbols,
+                  selectSymbol: selectSymbol, fetchRecent: fetchRecent, fetchBadges: fetchBadges, navigator: navigator,
+                  now: now, debounce: debounce, skeletonDelay: skeletonDelay)
+    }
+
+    init(
+        indexPreparation: SymbolIndexPreparation,
+        searchSymbols: any SearchSymbolsUseCase,
+        selectSymbol: any SelectSymbolUseCase,
+        fetchRecent: any FetchRecentRecordsUseCase,
+        fetchBadges: any FetchBadgesUseCase,
+        navigator: (any DrawNavigating)?,
+        now: @escaping () -> Date = Date.init,
+        debounce: Duration = .milliseconds(600),
+        skeletonDelay: Duration = .milliseconds(300)
+    ) {
+        self.indexPreparation = indexPreparation
         self.searchSymbols = searchSymbols
         self.selectSymbol = selectSymbol
         self.fetchRecent = fetchRecent
@@ -92,6 +104,11 @@ final class DrawViewModel {
         self.now = now
         self.debounce = debounce
         self.skeletonDelay = skeletonDelay
+        // 준비가 끝났을 때 그리던 그림이 있으면 바로 찾는다.
+        indexPreparation.onReady { [weak self] in
+            guard let self, !self.sketch.isEmpty else { return }
+            self.scheduleSearch(after: .zero)
+        }
     }
 
     // MARK: - 표시용 값
@@ -109,47 +126,19 @@ final class DrawViewModel {
 
     /// 화면이 처음 나타날 때. 인덱스가 없으면 바로 만들기 시작한다.
     func start() async {
-        guard preparationTask == nil, preparation != .ready else { return }
-        if case .ready = await prepareIndex.status() {
-            preparation = .ready
-        } else {
-            beginPreparation()
-        }
+        await indexPreparation.start()
     }
 
     /// 오류 상태의 "다시 준비하기"
     func retryPreparation() {
-        beginPreparation()
+        indexPreparation.retry()
     }
 
     /// 설정의 "심볼 다시 준비하기": 준비돼 있어도 처음부터 다시 만든다.
     func rebuildIndex() {
-        guard preparationTask == nil else { return }
+        guard !indexPreparation.isPreparing else { return }
         clearCanvas()
-        isRebuildingIndex = true
-        beginPreparation(force: true)
-    }
-
-    private func beginPreparation(force: Bool = false) {
-        guard preparationTask == nil else { return }
-        preparation = .preparing(progress: 0)
-        let startedAt = Date.now
-        preparationTask = Task {
-            do {
-                for try await progress in (force ? prepareIndex.rebuild() : prepareIndex.execute()) {
-                    preparation = .preparing(progress: progress)
-                }
-                #if DEBUG
-                preparationSeconds = Date.now.timeIntervalSince(startedAt)
-                #endif
-                preparation = .ready
-                if !sketch.isEmpty { scheduleSearch(after: .zero) }
-            } catch {
-                preparation = .failed(error.localizedDescription)
-            }
-            isRebuildingIndex = false
-            preparationTask = nil
-        }
+        indexPreparation.rebuild()
     }
 
     // MARK: - 그리기·검색

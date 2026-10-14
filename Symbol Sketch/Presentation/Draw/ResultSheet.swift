@@ -205,8 +205,8 @@ struct ResultSheet: View {
     }
 }
 
-/// 검색이 0.3초를 넘길 때 보여 주는 자리 표시 3행
-private struct SkeletonRows: View {
+/// 검색이 0.3초를 넘길 때 보여 주는 자리 표시 3행(그리기·온보딩 연습 공용)
+struct SkeletonRows: View {
     @State private var dimmed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

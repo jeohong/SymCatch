@@ -16,19 +16,27 @@ struct DrawToolbar: View {
 
     var body: some View {
         HStack(spacing: Spacing.m) {
-            HStack(spacing: 0) {
-                ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", isEnabled: canvas.canUndo) { canvas.undo() }
-                ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", isEnabled: canvas.canRedo) { canvas.redo() }
-                ToolButton(title: "지우개", systemImage: "eraser", isOn: canvas.tool == .eraser) { canvas.toggleTool() }
-                ToolButton(title: "전체 지우기", systemImage: "trash", isEnabled: !canvas.isEmpty) { canvas.clear() }
-            }
-            .padding(Spacing.xxs)
-            .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
-
+            SketchToolGroup(canvas: canvas)
             Spacer(minLength: 0)
 
             FindButton(phase: phase, isEnabled: canSearch, action: onSearch)
         }
+    }
+}
+
+/// 도구 묶음: 되돌리기 · 다시 하기 · 지우개 · 전체 지우기(그리기·온보딩 연습 공용)
+struct SketchToolGroup: View {
+    let canvas: SketchCanvasController
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", isEnabled: canvas.canUndo) { canvas.undo() }
+            ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", isEnabled: canvas.canRedo) { canvas.redo() }
+            ToolButton(title: "지우개", systemImage: "eraser", isOn: canvas.tool == .eraser) { canvas.toggleTool() }
+            ToolButton(title: "전체 지우기", systemImage: "trash", isEnabled: !canvas.isEmpty) { canvas.clear() }
+        }
+        .padding(Spacing.xxs)
+        .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
     }
 }
 
