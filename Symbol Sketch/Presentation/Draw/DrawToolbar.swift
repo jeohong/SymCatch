@@ -21,6 +21,8 @@ struct DrawToolbar: View {
 
             FindButton(phase: phase, isEnabled: canSearch, action: onSearch)
         }
+        // 아이콘 위주의 바라 접근성 글자 크기에서는 더 키우지 않고, 길게 누르면 크게 보여 준다(Large Content Viewer).
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 
@@ -37,6 +39,7 @@ struct SketchToolGroup: View {
         }
         .padding(Spacing.xxs)
         .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 
@@ -56,8 +59,11 @@ private struct ToolButton: View {
                 .frame(width: Metrics.toolButton, height: Metrics.toolButton)
                 .background(isOn ? DSColor.textPrimary : .clear, in: RoundedRectangle(cornerRadius: Radius.button))
                 .opacity(isEnabled ? 1 : 0.3)
+                // 배경이 투명해도 44pt 틀 전체가 눌리게 한다.
+                .contentShape(RoundedRectangle(cornerRadius: Radius.button))
         }
         .buttonStyle(.plain)
+        .accessibilityShowsLargeContentViewer()
         .disabled(!isEnabled)
         .accessibilityAddTraits(isOn ? .isSelected : [])
         .animation(.easeOut(duration: 0.15), value: isOn)
@@ -103,6 +109,9 @@ private struct FindButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+        .accessibilityShowsLargeContentViewer {
+            Label(title, systemImage: "magnifyingglass")
+        }
         .onChange(of: phase) { _, newPhase in
             guard newPhase == .waiting else { return }
             pendingFill = 0
