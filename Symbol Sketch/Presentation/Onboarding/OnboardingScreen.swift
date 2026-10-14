@@ -43,6 +43,7 @@ struct OnboardingScreen: View {
 
 private struct IntroPages: View {
     @Bindable var viewModel: OnboardingViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(spacing: 0) {
@@ -66,11 +67,19 @@ private struct IntroPages: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeOut(duration: 0.25), value: viewModel.introIndex)
 
-            HStack {
+            // 큰 글자에서는 버튼을 페이지 표시 아래 전체 폭으로 내린다(버튼 글자가 잘리지 않게).
+            let isLargeText = dynamicTypeSize.isAccessibilitySize
+            let layout = isLargeText
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
+                : AnyLayout(HStackLayout())
+            layout {
                 PageDots(count: OnboardingViewModel.introCount, current: viewModel.introIndex)
-                Spacer()
-                Button(viewModel.isLastIntro ? "연습해 보기" : "다음") {
+                if !isLargeText { Spacer() }
+                Button {
                     withAnimation(.easeOut(duration: 0.25)) { viewModel.next() }
+                } label: {
+                    Text(viewModel.isLastIntro ? "연습해 보기" : "다음")
+                        .frame(maxWidth: isLargeText ? .infinity : nil)
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
@@ -89,6 +98,8 @@ private struct IntroPage<Illustration: View>: View {
         ScrollView {
             VStack(spacing: Spacing.xl) {
                 illustration()
+                    // 장식 그림이라 접근성 글자 크기에서는 더 키우지 않는다(가로로 넘치지 않게).
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .frame(maxWidth: .infinity, minHeight: 240)
                 VStack(alignment: .leading, spacing: Spacing.s + Spacing.xxs) {
                     Text(title)
@@ -124,6 +135,7 @@ private struct PageDots: View {
         .animation(.easeOut(duration: 0.25), value: current)
         .accessibilityElement()
         .accessibilityLabel(Text("\(current + 1) / \(count)"))
+        .accessibilityAddTraits(.isStaticText)
     }
 }
 

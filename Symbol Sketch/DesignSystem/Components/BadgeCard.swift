@@ -18,6 +18,7 @@ enum BadgeCardContent: Hashable {
 /// 버튼과 "1 / 2" 표시는 담지 않는다(공유 이미지에도 그대로 쓰기 위해).
 struct BadgeCard: View {
     let content: BadgeCardContent
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(spacing: Spacing.m) {
@@ -35,14 +36,22 @@ struct BadgeCard: View {
                     .foregroundStyle(DSColor.textSecondary)
                     .padding(.top, -Spacing.s + Spacing.xxs)
                 comparison(symbolName: symbolName, sketch: sketch)
-                HStack(alignment: .firstTextBaseline) {
-                    Text("유사도").font(.subheadline).foregroundStyle(DSColor.textSecondary)
-                    Text("\(similarity)%").font(DSFont.similarity).foregroundStyle(DSColor.textPrimary)
-                    Spacer(minLength: Spacing.s)
+                // 큰 글자에서는 유사도와 등급·날짜를 두 줄로 나눈다.
+                let isLargeText = dynamicTypeSize.isAccessibilitySize
+                let layout = isLargeText
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.xs))
+                    : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
+                layout {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("유사도").font(.subheadline).foregroundStyle(DSColor.textSecondary)
+                        Text("\(similarity)%").font(DSFont.similarity).foregroundStyle(DSColor.textPrimary)
+                    }
+                    if !isLargeText { Spacer(minLength: Spacing.s) }
                     Text("\(tier.displayName) · \(ProgressDateFormat.day(date))")
                         .font(.footnote)
                         .foregroundStyle(DSColor.textSecondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityElement(children: .combine)
 
             case let .achievement(id, unlockedAt):

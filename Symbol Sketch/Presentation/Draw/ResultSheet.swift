@@ -12,6 +12,10 @@ import Domain
 /// 위로 끌거나 "모두 보기"로 펼치고, 아래로 끌거나 "접기"로 접는다.
 struct ResultSheet: View {
     @Bindable var viewModel: DrawViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// 접근성 글자 크기: 머리글을 세로로 쌓고, Top 3를 카드 대신 결과 행으로 보여 준다(기획서 6장 접근성).
+    private var isLargeText: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,7 +26,7 @@ struct ResultSheet: View {
                     .padding(.horizontal, Spacing.l)
                     .padding(.bottom, Spacing.l)
             }
-            .scrollDisabled(!viewModel.isSheetExpanded)
+            .scrollDisabled(!viewModel.isSheetExpanded && !isLargeText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(DSColor.bgSecondary)
@@ -44,10 +48,13 @@ struct ResultSheet: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+        let layout = isLargeText
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.xxs))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: Spacing.s))
+        return layout {
             Text("검색 결과").font(.headline).foregroundStyle(DSColor.textPrimary)
             Text("Top 10 · 유사도순").font(.footnote).foregroundStyle(DSColor.textSecondary)
-            Spacer(minLength: 0)
+            if !isLargeText { Spacer(minLength: 0) }
             if !viewModel.matches.isEmpty {
                 Button { toggle() } label: {
                     Label(viewModel.isSheetExpanded ? "접기" : "모두 보기",
@@ -59,6 +66,7 @@ struct ResultSheet: View {
                 .tint(DSColor.accent)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Spacing.l)
         .padding(.bottom, Spacing.xs)
     }
@@ -109,7 +117,24 @@ struct ResultSheet: View {
         }
     }
 
+    @ViewBuilder
     private var topThree: some View {
+        if isLargeText {
+            // 큰 글자에서는 카드 3칸이 너무 좁아 결과 행(세로 배치 지원)으로 보여 준다.
+            VStack(spacing: Spacing.s) {
+                ForEach(Array(viewModel.previewMatches.enumerated()), id: \.element.id) { index, match in
+                    Button { viewModel.select(match) } label: {
+                        SymbolResultRow(rank: index + 1, match: match, badgeHint: viewModel.badgeHint(for: match))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        } else {
+            topThreeCards
+        }
+    }
+
+    private var topThreeCards: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
             ForEach(Array(viewModel.previewMatches.enumerated()), id: \.element.id) { index, match in
                 Button { viewModel.select(match) } label: {

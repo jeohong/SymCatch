@@ -16,6 +16,7 @@ struct CelebrationOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShown = false
     @State private var shareImage: Image?
 
@@ -25,7 +26,14 @@ struct CelebrationOverlay: View {
                 .ignoresSafeArea()
                 .accessibilityHidden(true)
 
-            card
+            // 큰 글자에서 카드가 화면보다 길면 스크롤한다(글자가 잘리지 않게).
+            ViewThatFits(in: .vertical) {
+                card
+                ScrollView {
+                    card.padding(.vertical, Spacing.xl)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+            }
                 .id(viewModel.index)
                 .scaleEffect(isShown || reduceMotion ? 1 : 0.86)
                 .offset(y: isShown || reduceMotion ? 0 : 28)
@@ -71,7 +79,10 @@ struct CelebrationOverlay: View {
     }
 
     private var buttons: some View {
-        HStack(spacing: Spacing.s + Spacing.xxs) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: Spacing.s + Spacing.xxs))
+            : AnyLayout(HStackLayout(spacing: Spacing.s + Spacing.xxs))
+        return layout {
             if let shareImage {
                 ShareLink(item: shareImage, preview: SharePreview(shareTitle, image: shareImage)) {
                     Label("공유하기", systemImage: "square.and.arrow.up")

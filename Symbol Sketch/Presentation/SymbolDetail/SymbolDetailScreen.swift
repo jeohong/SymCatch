@@ -72,6 +72,7 @@ struct SymbolDetailScreen: View {
 
 private struct PreviewCard: View {
     @Bindable var viewModel: SymbolDetailViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .largeTitle) private var glyphSize = Metrics.previewGlyph
 
     var body: some View {
@@ -113,27 +114,51 @@ private struct PreviewCard: View {
                 }
                 .pickerStyle(.segmented)
 
-                HStack(spacing: Spacing.m) {
-                    Text("웨이트").font(.subheadline).foregroundStyle(DSColor.textPrimary)
-                    Slider(
-                        value: Binding(
-                            get: { Double(viewModel.weight.rawValue) },
-                            set: { viewModel.weight = .init(rawValue: Int($0.rounded())) ?? .regular }
-                        ),
-                        in: 0...Double(SymbolDetailViewModel.Weight.allCases.count - 1),
-                        step: 1
-                    )
-                    .tint(DSColor.accent)
-                    .accessibilityValue(viewModel.weight.displayName)
-                    Text(viewModel.weight.displayName)
-                        .font(DSFont.code)
-                        .foregroundStyle(DSColor.textSecondary)
-                        .frame(minWidth: 78, alignment: .trailing)
+                if dynamicTypeSize.isAccessibilitySize {
+                    // 큰 글자: 이름·값을 위에, 슬라이더를 아래 전체 폭으로.
+                    VStack(alignment: .leading, spacing: Spacing.s) {
+                        HStack {
+                            weightLabel
+                            Spacer(minLength: Spacing.s)
+                            weightValue
+                        }
+                        weightSlider
+                    }
+                } else {
+                    HStack(spacing: Spacing.m) {
+                        weightLabel
+                        weightSlider
+                        weightValue.frame(minWidth: 78, alignment: .trailing)
+                    }
                 }
             }
             .padding([.horizontal, .bottom], Spacing.l)
         }
         .background(DSColor.cell, in: RoundedRectangle(cornerRadius: Radius.canvas))
+    }
+
+    private var weightLabel: some View {
+        Text("웨이트").font(.subheadline).foregroundStyle(DSColor.textPrimary)
+    }
+
+    private var weightValue: some View {
+        Text(viewModel.weight.displayName)
+            .font(DSFont.code)
+            .foregroundStyle(DSColor.textSecondary)
+    }
+
+    private var weightSlider: some View {
+        Slider(
+            value: Binding(
+                get: { Double(viewModel.weight.rawValue) },
+                set: { viewModel.weight = .init(rawValue: Int($0.rounded())) ?? .regular }
+            ),
+            in: 0...Double(SymbolDetailViewModel.Weight.allCases.count - 1),
+            step: 1
+        )
+        .tint(DSColor.accent)
+        .accessibilityLabel("웨이트")
+        .accessibilityValue(viewModel.weight.displayName)
     }
 
     private var name: some View {
@@ -183,6 +208,7 @@ struct SymbolGlyph: View {
 
 private struct CopySection: View {
     let viewModel: SymbolDetailViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(spacing: 0) {
@@ -194,7 +220,8 @@ private struct CopySection: View {
                             Text(viewModel.code(for: kind))
                                 .font(DSFont.code)
                                 .foregroundStyle(DSColor.textPrimary)
-                                .lineLimit(1)
+                                // 큰 글자에서는 코드를 줄여 보이지 않고 여러 줄로 다 보여 준다.
+                                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                                 .truncationMode(.middle)
                         }
                         Spacer(minLength: 0)

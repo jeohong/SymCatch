@@ -121,35 +121,27 @@ struct RecentRow: View {
     @ScaledMetric(relativeTo: .title) private var tileSize = Metrics.rowTile
 
     var body: some View {
-        HStack(spacing: Spacing.m) {
-            Image(systemName: record.symbolName)
-                .font(.system(size: glyphSize))
-                .foregroundStyle(DSColor.textPrimary)
-                .frame(width: tileSize, height: tileSize)
-                .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.tile))
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(record.symbolName)
-                    .font(DSFont.symbolName)
-                    .foregroundStyle(DSColor.textPrimary)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                    .truncationMode(.middle)
-                Text(timeText)
-                    .font(.footnote)
-                    .foregroundStyle(DSColor.textSecondary)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                // 큰 글자: 위 줄에 심볼·당시 그림·유사도, 아래에 이름과 시각을 전체 폭으로(이름이 꺾이지 않게).
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    HStack(spacing: Spacing.m) {
+                        glyphTile
+                        sketchTile
+                        Spacer(minLength: 0)
+                        similarity
+                    }
+                    nameAndTime
+                }
+            } else {
+                HStack(spacing: Spacing.m) {
+                    glyphTile
+                    nameAndTime
+                    Spacer(minLength: 0)
+                    sketchTile
+                    similarity.frame(minWidth: 58, alignment: .trailing)
+                }
             }
-            Spacer(minLength: 0)
-            SketchShape(sketch: record.sketch)
-                .stroke(DSColor.canvasInk, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                .frame(width: tileSize, height: tileSize)
-                .background(DSColor.canvasBackground, in: RoundedRectangle(cornerRadius: Radius.tile))
-                .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(DSColor.separator, lineWidth: 1))
-            HStack(spacing: Spacing.xs) {
-                if let badge { BadgeDot(tier: badge.tier) }
-                Text("\(record.similarity)%")
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(DSColor.textPrimary)
-            }
-            .frame(minWidth: 58, alignment: .trailing)
         }
         .padding(.vertical, Spacing.s + Spacing.xxs)
         .frame(minHeight: 64)
@@ -157,6 +149,45 @@ struct RecentRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(.isButton)
+    }
+
+    private var glyphTile: some View {
+        Image(systemName: record.symbolName)
+            .font(.system(size: glyphSize))
+            .foregroundStyle(DSColor.textPrimary)
+            .frame(width: tileSize, height: tileSize)
+            .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.tile))
+    }
+
+    private var nameAndTime: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            Text(record.symbolName)
+                .font(DSFont.symbolName)
+                .foregroundStyle(DSColor.textPrimary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                .truncationMode(.middle)
+            Text(timeText)
+                .font(.footnote)
+                .foregroundStyle(DSColor.textSecondary)
+        }
+    }
+
+    private var sketchTile: some View {
+        SketchShape(sketch: record.sketch)
+            .stroke(DSColor.canvasInk, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            .frame(width: tileSize, height: tileSize)
+            .background(DSColor.canvasBackground, in: RoundedRectangle(cornerRadius: Radius.tile))
+            .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(DSColor.separator, lineWidth: 1))
+    }
+
+    private var similarity: some View {
+        HStack(spacing: Spacing.xs) {
+            if let badge { BadgeDot(tier: badge.tier) }
+            Text("\(record.similarity)%")
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(DSColor.textPrimary)
+                .fixedSize()   // "100%"가 두 줄로 꺾이지 않게
+        }
     }
 
     private var accessibilityText: String {

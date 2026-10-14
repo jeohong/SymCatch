@@ -75,17 +75,30 @@ struct BadgeDetailScreen: View {
     }
 
     private func row(_ title: LocalizedStringKey, value: String, emphasized: Bool = false) -> some View {
-        HStack {
-            Text(title).foregroundStyle(DSColor.textPrimary)
-            Spacer()
-            Text(value)
-                .fontWeight(emphasized ? .semibold : .regular)
-                .foregroundStyle(emphasized ? DSColor.textPrimary : DSColor.textSecondary)
+        // 한 줄에 안 들어가면(큰 글자) 값을 제목 아래로 내린다.
+        ViewThatFits(in: .horizontal) {
+            HStack {
+                Text(title).foregroundStyle(DSColor.textPrimary)
+                Spacer()
+                rowValue(value, emphasized: emphasized)
+            }
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(title).foregroundStyle(DSColor.textPrimary)
+                rowValue(value, emphasized: emphasized)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, Spacing.s)
         }
         .font(.body)
         .padding(.horizontal, Spacing.l)
         .frame(minHeight: 48)
         .accessibilityElement(children: .combine)
+    }
+
+    private func rowValue(_ value: String, emphasized: Bool) -> some View {
+        Text(value)
+            .fontWeight(emphasized ? .semibold : .regular)
+            .foregroundStyle(emphasized ? DSColor.textPrimary : DSColor.textSecondary)
     }
 
     private func pastSketch(_ badge: SymbolBadge) -> some View {
