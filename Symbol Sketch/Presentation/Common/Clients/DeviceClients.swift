@@ -28,12 +28,21 @@ struct SystemPasteboard: PasteboardClient {
     }
 }
 
+/// 설정의 햅틱 토글(기본 켬)을 따른다.
 struct SystemHaptics: HapticsClient {
+    var defaults: UserDefaults = .standard
+
+    private var isEnabled: Bool {
+        defaults.object(forKey: AppPreferenceKey.haptics) as? Bool ?? true
+    }
+
     func lightImpact() {
+        guard isEnabled else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     func success() {
+        guard isEnabled else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 }

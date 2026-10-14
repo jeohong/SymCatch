@@ -168,6 +168,21 @@ struct DrawViewModelTests {
         #expect(viewModel.preparation == .ready)
     }
 
+    @Test func 심볼_다시_준비하기는_캔버스를_비우고_다시_준비한다() async {
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)))
+        await viewModel.start()
+        viewModel.sketchDidChange(drawn)
+        await viewModel.pendingSearch?.value
+
+        viewModel.rebuildIndex()
+        #expect(viewModel.matches.isEmpty)
+        #expect(viewModel.canvasResetCount == 1)
+        #expect(viewModel.isRebuildingIndex)
+        while viewModel.preparation != .ready { await Task.yield() }
+        #expect(viewModel.preparation == .ready)
+        #expect(!viewModel.isRebuildingIndex)
+    }
+
     @Test func 그리면_자동으로_찾고_Top3를_미리_보여준다() async {
         let search = StubSearch(outcome: .results(results))
         let viewModel = makeViewModel(search: search)

@@ -140,6 +140,23 @@ final class AppContainer {
         BadgeDetailViewModel(symbolName: symbolName, fetchBadges: DefaultFetchBadgesUseCase(badges: badges), navigator: navigator)
     }
 
+    func makeSettingsViewModel(navigator: any SettingsNavigating) -> SettingsViewModel {
+        SettingsViewModel(
+            prepareIndex: appEngine.prepare,
+            resetProgress: DefaultResetProgressUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
+            navigator: navigator,
+            appVersion: Self.appVersion
+        )
+    }
+
+    /// "1.0 (1)" = 버전 (빌드)
+    private static var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "-"
+        let build = info?["CFBundleVersion"] as? String ?? "-"
+        return "\(version) (\(build))"
+    }
+
     func makeCelebrationViewModel(celebration: Celebration, onFinish: @escaping () -> Void) -> CelebrationViewModel {
         CelebrationViewModel(celebration: celebration, haptics: SystemHaptics(), onFinish: onFinish)
     }

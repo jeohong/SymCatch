@@ -47,6 +47,7 @@ protocol RecentNavigating: AnyObject {
 enum CollectionRoute: Hashable {
     case badgeDetail(symbolName: String)
     case symbolDetail(SymbolDetailRequest)
+    case settings
 }
 
 /// 콜렉션(S6)·뱃지 상세(S7)가 화면 이동 의도를 알리는 통로
@@ -57,4 +58,13 @@ protocol CollectionNavigating: AnyObject {
     /// "더 높은 등급에 도전" / "그려서 도전하기": 그리기 탭으로 가서 목표 카드를 띄운다.
     func startChallenge(symbolName: String)
     func showDrawTab()
+    /// 오른쪽 위 톱니(S8)
+    func showSettings()
+}
+
+/// 설정(S8)이 화면 이동 의도를 알리는 통로
+@MainActor
+protocol SettingsNavigating: AnyObject {
+    /// "심볼 다시 준비하기": 그리기 탭으로 가서 준비 상태를 보여 준다.
+    func rebuildSymbolIndex()
 }

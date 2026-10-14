@@ -154,7 +154,7 @@ struct ResultSheet: View {
             .foregroundStyle(DSColor.textPrimary)
             ProgressView(value: progress)
                 .tint(DSColor.accent)
-            Text("처음 한 번만 기기 안에서 심볼을 준비해요")
+            Text(viewModel.isRebuildingIndex ? "기기 안에서 심볼 인덱스를 다시 만들고 있어요" : "처음 한 번만 기기 안에서 심볼을 준비해요")
                 .font(.footnote)
                 .foregroundStyle(DSColor.textSecondary)
         }

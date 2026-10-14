@@ -74,6 +74,8 @@ struct RootTabView: View {
                             BadgeDetailScreen(viewModel: container.makeBadgeDetailViewModel(symbolName: name, navigator: router))
                         case .symbolDetail(let request):
                             SymbolDetailScreen(viewModel: container.makeSymbolDetailViewModel(request: request))
+                        case .settings:
+                            SettingsScreen(viewModel: container.makeSettingsViewModel(navigator: router))
                         }
                     }
             }
@@ -94,6 +96,12 @@ struct RootTabView: View {
         .task {
             await container.reconcileBadgeTiers()
             await drawViewModel.refreshProgress()   // 맞춘 등급을 결과 행 표시에 바로 반영
+        }
+        .onChange(of: router.pendingIndexRebuild) { _, requested in
+            // 설정의 "심볼 다시 준비하기" → 그리기 화면에서 준비 진행을 보여 준다.
+            guard requested else { return }
+            drawViewModel.rebuildIndex()
+            router.pendingIndexRebuild = false
         }
         .onChange(of: router.pendingChallenge) { _, name in
             // 콜렉션의 "도전하기" → 그리기 화면에 목표를 넘긴다.

@@ -16,6 +16,13 @@ struct CollectionScreen: View {
         content
             .background(DSColor.bgGrouped)
             .navigationTitle("콜렉션")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { viewModel.openSettings() } label: {
+                        Label("설정", systemImage: "gearshape")
+                    }
+                }
+            }
             .task { await viewModel.load() }
     }
 

@@ -26,6 +26,8 @@ private final class SpyCollectionNavigator: CollectionNavigating {
     var symbolDetails: [SymbolDetailRequest] = []
     var challenges: [String] = []
     var wentToDraw = 0
+    var openedSettings = 0
+    func showSettings() { openedSettings += 1 }
     func showBadgeDetail(symbolName: String) { badgeDetails.append(symbolName) }
     func showCollectionSymbolDetail(_ request: SymbolDetailRequest) { symbolDetails.append(request) }
     func startChallenge(symbolName: String) { challenges.append(symbolName) }
@@ -85,8 +87,10 @@ struct CollectionViewModelTests {
         let viewModel = CollectionViewModel(fetchCollection: StubCollection(summary: summary(badges: [])), navigator: navigator)
         viewModel.select(symbolName: "pills")
         viewModel.goDraw()
+        viewModel.openSettings()
         #expect(navigator.badgeDetails == ["pills"])
         #expect(navigator.wentToDraw == 1)
+        #expect(navigator.openedSettings == 1)
     }
 }
 

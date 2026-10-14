@@ -72,6 +72,11 @@ final class CollectionViewModel {
         navigator?.showBadgeDetail(symbolName: symbolName)
     }
 
+    /// 오른쪽 위 톱니
+    func openSettings() {
+        navigator?.showSettings()
+    }
+
     /// 뱃지가 없을 때 안내의 "그리러 가기"
     func goDraw() {
         navigator?.showDrawTab()

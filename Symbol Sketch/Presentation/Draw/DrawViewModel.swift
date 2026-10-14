@@ -32,6 +32,8 @@ final class DrawViewModel {
     }
 
     private(set) var preparation: Preparation = .checking
+    /// 설정에서 "심볼 다시 준비하기"로 다시 만드는 중인지(준비 문구가 달라진다)
+    private(set) var isRebuildingIndex = false
     #if DEBUG
     /// 개발용: 이번 실행에서 심볼 준비에 걸린 시간(초). 인덱스를 새로 만들 때만 채워진다.
     private(set) var preparationSeconds: Double?
@@ -120,13 +122,21 @@ final class DrawViewModel {
         beginPreparation()
     }
 
-    private func beginPreparation() {
+    /// 설정의 "심볼 다시 준비하기": 준비돼 있어도 처음부터 다시 만든다.
+    func rebuildIndex() {
+        guard preparationTask == nil else { return }
+        clearCanvas()
+        isRebuildingIndex = true
+        beginPreparation(force: true)
+    }
+
+    private func beginPreparation(force: Bool = false) {
         guard preparationTask == nil else { return }
         preparation = .preparing(progress: 0)
         let startedAt = Date.now
         preparationTask = Task {
             do {
-                for try await progress in prepareIndex.execute() {
+                for try await progress in (force ? prepareIndex.rebuild() : prepareIndex.execute()) {
                     preparation = .preparing(progress: progress)
                 }
                 #if DEBUG
@@ -137,6 +147,7 @@ final class DrawViewModel {
             } catch {
                 preparation = .failed(error.localizedDescription)
             }
+            isRebuildingIndex = false
             preparationTask = nil
         }
     }
