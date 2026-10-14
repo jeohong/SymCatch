@@ -12,6 +12,13 @@ public protocol PrepareSymbolIndexUseCase: Sendable {
     func status() async -> SymbolIndexStatus
     /// 인덱스가 준비돼 있으면 바로 끝나고, 아니면 만들면서 진행률(0...1)을 내보낸다.
     func execute() -> AsyncThrowingStream<Double, Error>
+    /// 준비돼 있어도 처음부터 다시 만든다(설정 "심볼 다시 준비하기").
+    func rebuild() -> AsyncThrowingStream<Double, Error>
+}
+
+public extension PrepareSymbolIndexUseCase {
+    /// 다시 만들기를 따로 지원하지 않는 구현(테스트 가짜 등)은 일반 준비와 같게 둔다.
+    func rebuild() -> AsyncThrowingStream<Double, Error> { execute() }
 }
 
 public struct DefaultPrepareSymbolIndexUseCase: PrepareSymbolIndexUseCase {
@@ -26,11 +33,19 @@ public struct DefaultPrepareSymbolIndexUseCase: PrepareSymbolIndexUseCase {
     }
 
     public func execute() -> AsyncThrowingStream<Double, Error> {
+        stream(force: false)
+    }
+
+    public func rebuild() -> AsyncThrowingStream<Double, Error> {
+        stream(force: true)
+    }
+
+    private func stream(force: Bool) -> AsyncThrowingStream<Double, Error> {
         let builder = builder
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    if case .ready = await builder.status() {
+                    if !force, case .ready = await builder.status() {
                         continuation.yield(1)
                         continuation.finish()
                         return

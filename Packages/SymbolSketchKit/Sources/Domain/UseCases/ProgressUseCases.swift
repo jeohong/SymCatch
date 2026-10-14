@@ -67,6 +67,35 @@ public struct DefaultFetchBadgesUseCase: FetchBadgesUseCase {
     }
 }
 
+// MARK: - 기록 초기화(S8)
+
+public protocol ResetProgressUseCase: Sendable {
+    /// 최근 찾은 심볼, 뱃지, 업적, 통계를 모두 지운다. 되돌릴 수 없다.
+    func execute() async throws
+}
+
+public struct DefaultResetProgressUseCase: ResetProgressUseCase {
+    private let records: any FoundRecordRepository
+    private let badges: any BadgeRepository
+    private let achievements: any AchievementRepository
+    private let stats: any UserStatsRepository
+
+    public init(records: any FoundRecordRepository, badges: any BadgeRepository,
+                achievements: any AchievementRepository, stats: any UserStatsRepository) {
+        self.records = records
+        self.badges = badges
+        self.achievements = achievements
+        self.stats = stats
+    }
+
+    public func execute() async throws {
+        try await records.deleteAll()
+        try await badges.deleteAll()
+        try await achievements.deleteAll()
+        try await stats.reset()
+    }
+}
+
 // MARK: - 등급 맞추기(앱 시작 시)
 
 public protocol ReconcileBadgeTiersUseCase: Sendable {
