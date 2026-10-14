@@ -214,13 +214,13 @@ struct SkeletonRows: View {
         VStack(spacing: Spacing.s) {
             ForEach(0..<3, id: \.self) { _ in
                 HStack(spacing: Spacing.m) {
-                    RoundedRectangle(cornerRadius: Radius.tile).fill(DSColor.bgTertiary).frame(width: Metrics.rowTile, height: Metrics.rowTile)
+                    RoundedRectangle(cornerRadius: Radius.tile).fill(DSColor.skeleton).frame(width: Metrics.rowTile, height: Metrics.rowTile)
                     VStack(alignment: .leading, spacing: Spacing.s) {
-                        Capsule().fill(DSColor.bgTertiary).frame(width: 140, height: 12)
-                        Capsule().fill(DSColor.bgTertiary).frame(width: 80, height: 10)
+                        Capsule().fill(DSColor.skeleton).frame(width: 140, height: 12)
+                        Capsule().fill(DSColor.skeleton).frame(width: 80, height: 10)
                     }
                     Spacer()
-                    RoundedRectangle(cornerRadius: Radius.chip).fill(DSColor.bgTertiary).frame(width: 48, height: 20)
+                    RoundedRectangle(cornerRadius: Radius.chip).fill(DSColor.skeleton).frame(width: 48, height: 20)
                 }
                 .padding(Spacing.m)
                 .frame(height: 64)
