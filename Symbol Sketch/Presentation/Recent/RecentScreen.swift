@@ -80,6 +80,8 @@ struct RecentScreen: View {
                             RecentRow(record: record, badge: viewModel.badge(for: record), timeText: viewModel.timeText(for: record))
                         }
                         .buttonStyle(.plain)
+                        // 행 안쪽 여백(위아래 10)은 RecentRow가 갖는다. List 기본 여백은 쓰지 않는다.
+                        .listRowInsets(EdgeInsets(top: 0, leading: Spacing.screen, bottom: 0, trailing: Spacing.screen))
                         .listRowBackground(DSColor.bgPrimary)
                         .listRowSeparatorTint(DSColor.separator)
                         .alignmentGuide(.listRowSeparatorLeading) { _ in Metrics.rowTile + Spacing.m }
@@ -95,10 +97,13 @@ struct RecentScreen: View {
                     Text(section.group.title)
                         .font(DSFont.sectionHeader)
                         .foregroundStyle(DSColor.textSecondary)
+                        // DESIGN_NOTES S5: 그룹 헤더 padding `16 16 6`
+                        .listRowInsets(EdgeInsets(top: Spacing.l, leading: Spacing.screen, bottom: Spacing.xs + Spacing.xxs, trailing: Spacing.screen))
                 }
             }
         }
         .listStyle(.plain)
+        .environment(\.defaultMinListHeaderHeight, 0)
         .scrollContentBackground(.hidden)
         .searchable(text: $viewModel.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("이름으로 검색"))
         .animation(.default, value: viewModel.sections)
