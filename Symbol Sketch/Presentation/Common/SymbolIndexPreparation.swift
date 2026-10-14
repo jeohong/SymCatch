@@ -53,6 +53,8 @@ final class SymbolIndexPreparation {
         if case .ready(let count) = await prepareIndex.status() {
             symbolCount = count
             state = .ready
+            // 상태를 확인하는 사이에 그린 그림도 바로 찾도록 알린다(이미 준비된 경우에도).
+            readyHandlers.forEach { $0() }
         } else {
             begin(force: false)
         }

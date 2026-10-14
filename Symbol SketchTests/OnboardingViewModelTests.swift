@@ -209,6 +209,20 @@ struct SymbolIndexPreparationTests {
         preparation.onReady {}
         #expect(!changed.value)
     }
+
+    /// 이미 준비된 인덱스여도, 상태를 확인하는 사이에 걸어 둔 "준비 끝나면" 알림은 불려야 한다.
+    @Test func 이미_준비돼_있어도_준비_완료_알림을_보낸다() async {
+        let prepare = ControlledPrepare()
+        prepare.finish()   // 이미 준비된 상태
+        let preparation = SymbolIndexPreparation(prepareIndex: prepare)
+        let called = Box()
+        preparation.onReady { called.value = true }
+
+        await preparation.start()
+
+        #expect(preparation.state == .ready)
+        #expect(called.value)
+    }
 }
 
 private final class Box: @unchecked Sendable {
