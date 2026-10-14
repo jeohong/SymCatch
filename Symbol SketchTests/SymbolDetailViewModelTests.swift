@@ -18,6 +18,11 @@ private struct StubDetail: GetSymbolDetailUseCase {
     }
 }
 
+private struct StubBadges: FetchBadgesUseCase {
+    var badges: [String: SymbolBadge] = [:]
+    func execute() async throws -> [String: SymbolBadge] { badges }
+}
+
 @MainActor
 private final class SpyPasteboard: PasteboardClient {
     var copied: [String] = []
@@ -33,10 +38,16 @@ private final class SpyHaptics: HapticsClient {
 
 @MainActor
 struct SymbolDetailViewModelTests {
-    private func makeViewModel(similarity: Int? = 92, pasteboard: SpyPasteboard = SpyPasteboard(), haptics: SpyHaptics = SpyHaptics()) -> SymbolDetailViewModel {
+    private func makeViewModel(
+        similarity: Int? = 92,
+        badges: [String: SymbolBadge] = [:],
+        pasteboard: SpyPasteboard = SpyPasteboard(),
+        haptics: SpyHaptics = SpyHaptics()
+    ) -> SymbolDetailViewModel {
         SymbolDetailViewModel(
             request: SymbolDetailRequest(name: "heart", sketch: .exampleHeart, similarity: similarity),
             getDetail: StubDetail(),
+            fetchBadges: StubBadges(badges: badges),
             pasteboard: pasteboard,
             haptics: haptics
         )
@@ -96,5 +107,24 @@ struct SymbolDetailViewModelTests {
         let viewModel = makeViewModel()
         await viewModel.load()
         #expect(viewModel.summaryText == "건강 · iOS 13.0 이상")
+    }
+
+    @Test func 뱃지가_있으면_등급과_최고_유사도를_보여_준다() async {
+        let badge = SymbolBadge(symbolName: "heart", tier: .silver, bestSimilarity: 92, bestSketch: .exampleHeart, earnedAt: .now)
+        let viewModel = makeViewModel(badges: ["heart": badge])
+        await viewModel.load()
+
+        #expect(viewModel.selectedBadge == badge)
+        #expect(viewModel.badgeText == "실버 뱃지 보유 · 최고 92%")
+    }
+
+    @Test func 뱃지는_보고_있는_변형을_따른다() async {
+        let badge = SymbolBadge(symbolName: "heart.fill", tier: .legendary, bestSimilarity: 100, bestSketch: .exampleHeart, earnedAt: .now)
+        let viewModel = makeViewModel(badges: ["heart.fill": badge])
+        await viewModel.load()
+        #expect(viewModel.badgeText == nil)
+
+        viewModel.selectVariant("heart.fill")
+        #expect(viewModel.badgeText == "레전더리 뱃지 보유 · 최고 100%")
     }
 }

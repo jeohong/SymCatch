@@ -190,6 +190,7 @@ final class AppContainer {
         SymbolDetailViewModel(
             request: request,
             getDetail: DefaultGetSymbolDetailUseCase(catalog: symbolCatalog),
+            fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
             pasteboard: SystemPasteboard(),
             haptics: SystemHaptics()
         )

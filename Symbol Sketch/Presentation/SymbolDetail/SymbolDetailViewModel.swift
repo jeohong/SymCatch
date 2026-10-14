@@ -63,19 +63,31 @@ final class SymbolDetailViewModel {
     private(set) var recentlyCopied: CopyKind?
 
     private let getDetail: any GetSymbolDetailUseCase
+    private let fetchBadges: any FetchBadgesUseCase
+    /// 심볼 이름 → 보유 뱃지
+    private var badges: [String: SymbolBadge] = [:]
     private let pasteboard: any PasteboardClient
     private let haptics: any HapticsClient
     private var copiedResetTask: Task<Void, Never>?
 
-    init(request: SymbolDetailRequest, getDetail: any GetSymbolDetailUseCase, pasteboard: any PasteboardClient, haptics: any HapticsClient) {
+    init(
+        request: SymbolDetailRequest,
+        getDetail: any GetSymbolDetailUseCase,
+        fetchBadges: any FetchBadgesUseCase,
+        pasteboard: any PasteboardClient,
+        haptics: any HapticsClient
+    ) {
         self.request = request
         self.selectedName = request.name
         self.getDetail = getDetail
+        self.fetchBadges = fetchBadges
         self.pasteboard = pasteboard
         self.haptics = haptics
     }
 
     func load() async {
+        // 뱃지를 못 읽어도 상세는 보여 준다.
+        badges = (try? await fetchBadges.execute()) ?? [:]
         do {
             loadState = .loaded(try await getDetail.execute(name: request.name))
         } catch {
@@ -129,6 +141,15 @@ final class SymbolDetailViewModel {
         let os = String(localized: "iOS \(selectedSymbol?.minOS ?? "") 이상")
         guard let category = detail?.categories.first else { return os }
         return "\(SymbolCategoryNames.displayName(for: category)) · \(os)"
+    }
+
+    /// 지금 보고 있는 변형의 보유 뱃지
+    var selectedBadge: SymbolBadge? { badges[selectedName] }
+
+    /// "실버 뱃지 보유 · 최고 92%". 뱃지가 없으면 nil.
+    var badgeText: String? {
+        guard let badge = selectedBadge else { return nil }
+        return String(localized: "\(badge.tier.displayName) 뱃지 보유 · 최고 \(badge.bestSimilarity)%")
     }
 
     var categoryNames: [String] {

@@ -87,10 +87,18 @@ private struct PreviewCard: View {
             Divider().overlay(DSColor.separator)
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(viewModel.selectedName)
-                    .font(DSFont.symbolNameLarge)
-                    .foregroundStyle(DSColor.textPrimary)
-                    .textSelection(.enabled)
+                // 이름 ↔ 보유 뱃지. 한 줄에 안 들어가면 뱃지를 이름 아래로 내린다.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                        name
+                        Spacer(minLength: 0)
+                        badgeLine
+                    }
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        name
+                        badgeLine
+                    }
+                }
                 Text(viewModel.summaryText)
                     .font(.subheadline)
                     .foregroundStyle(DSColor.textSecondary)
@@ -126,6 +134,27 @@ private struct PreviewCard: View {
             .padding([.horizontal, .bottom], Spacing.l)
         }
         .background(DSColor.cell, in: RoundedRectangle(cornerRadius: Radius.canvas))
+    }
+
+    private var name: some View {
+        Text(viewModel.selectedName)
+            .font(DSFont.symbolNameLarge)
+            .foregroundStyle(DSColor.textPrimary)
+            .textSelection(.enabled)
+    }
+
+    /// "{등급} 뱃지 보유 · 최고 {n}%" + 14pt 등급 점(DESIGN_NOTES S3)
+    @ViewBuilder private var badgeLine: some View {
+        if let badge = viewModel.selectedBadge, let text = viewModel.badgeText {
+            HStack(spacing: Spacing.xs) {
+                BadgeDot(tier: badge.tier, size: 14)
+                Text(text)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(DSColor.textSecondary)
+                    .fixedSize()
+            }
+            .accessibilityElement(children: .combine)
+        }
     }
 }
 
@@ -406,6 +435,12 @@ private struct PreviewDetail: GetSymbolDetailUseCase {
     }
 }
 
+private struct PreviewBadges: FetchBadgesUseCase {
+    func execute() async throws -> [String: SymbolBadge] {
+        ["heart": SymbolBadge(symbolName: "heart", tier: .silver, bestSimilarity: 92, bestSketch: .empty, earnedAt: .now)]
+    }
+}
+
 private struct PreviewPasteboard: PasteboardClient { func copy(_ text: String) {} }
 private struct PreviewHaptics: HapticsClient { func lightImpact() {}; func success() {} }
 
@@ -414,6 +449,7 @@ private func previewScreen() -> some View {
         SymbolDetailScreen(viewModel: SymbolDetailViewModel(
             request: SymbolDetailRequest(name: "heart", sketch: .exampleHeart, similarity: 92),
             getDetail: PreviewDetail(),
+            fetchBadges: PreviewBadges(),
             pasteboard: PreviewPasteboard(),
             haptics: PreviewHaptics()
         ))
