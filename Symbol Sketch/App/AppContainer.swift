@@ -139,6 +139,15 @@ final class AppContainer {
         #endif
     }
 
+    // MARK: - 탭 ViewModel (앱에 하나씩)
+
+    /// 탭 화면의 ViewModel은 앱이 살아 있는 동안 하나씩만 둔다. 그리던 그림·목록 상태를 유지하고,
+    /// 상위 화면이 다시 그려져도(테마 전환 등) 새로 만들지 않기 위함.
+    private(set) lazy var drawViewModel = makeDrawViewModel(navigator: router)
+    private(set) lazy var recentViewModel = makeRecentViewModel(navigator: router)
+    private(set) lazy var collectionViewModel = makeCollectionViewModel(navigator: router)
+    private(set) lazy var onboardingViewModel = makeOnboardingViewModel(navigator: router)
+
     // MARK: - ViewModel 팩토리
 
     func makeDrawViewModel(navigator: any DrawNavigating) -> DrawViewModel {

@@ -17,14 +17,15 @@ struct RootTabView: View {
     @State private var collectionViewModel: CollectionViewModel
     @State private var onboardingViewModel: OnboardingViewModel
 
+    /// 상위 화면(테마 전환 등)이 다시 그려질 때마다 init이 다시 불린다. 그래서 탭 ViewModel은 여기서 만들지 않고
+    /// 컨테이너가 앱에 하나씩만 만들어 둔 것을 쓴다.
     init(container: AppContainer) {
         self.container = container
-        let router = container.router
-        _router = State(initialValue: router)
-        _drawViewModel = State(initialValue: container.makeDrawViewModel(navigator: router))
-        _recentViewModel = State(initialValue: container.makeRecentViewModel(navigator: router))
-        _collectionViewModel = State(initialValue: container.makeCollectionViewModel(navigator: router))
-        _onboardingViewModel = State(initialValue: container.makeOnboardingViewModel(navigator: router))
+        _router = State(initialValue: container.router)
+        _drawViewModel = State(initialValue: container.drawViewModel)
+        _recentViewModel = State(initialValue: container.recentViewModel)
+        _collectionViewModel = State(initialValue: container.collectionViewModel)
+        _onboardingViewModel = State(initialValue: container.onboardingViewModel)
     }
 
     var body: some View {

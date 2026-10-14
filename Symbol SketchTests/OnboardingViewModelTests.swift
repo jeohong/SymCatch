@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Observation
 import Testing
 import Domain
 @testable import Symbol_Sketch
@@ -190,4 +191,26 @@ struct AppRouterOnboardingTests {
         store.set(true, forKey: AppRouter.onboardingCompletedKey)
         #expect(AppRouter(showsOnboarding: true, defaults: store).isOnboardingPresented)
     }
+}
+
+@MainActor
+struct SymbolIndexPreparationTests {
+    /// 테마를 바꾸면 앱이 멈췄던 문제(10-14)의 회귀 테스트: 화면이 준비 상태를 지켜보는 중에
+    /// ViewModel이 "준비 끝나면 알려 줘"를 등록해도 화면 갱신이 일어나면 안 된다.
+    @Test func 준비_완료_알림을_등록해도_화면_갱신이_일어나지_않는다() {
+        let preparation = SymbolIndexPreparation(prepareIndex: ControlledPrepare())
+        let changed = Box()
+        withObservationTracking {
+            _ = preparation.state
+            preparation.onReady {}
+        } onChange: {
+            changed.value = true
+        }
+        preparation.onReady {}
+        #expect(!changed.value)
+    }
+}
+
+private final class Box: @unchecked Sendable {
+    var value = false
 }

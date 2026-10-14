@@ -31,7 +31,9 @@ final class SymbolIndexPreparation {
 
     private let prepareIndex: any PrepareSymbolIndexUseCase
     private var task: Task<Void, Never>?
-    private var readyHandlers: [() -> Void] = []
+    /// 내부 알림 목록이라 화면이 지켜보지 않는다. 지켜보면 ViewModel을 만들 때(등록) 화면이 다시 그려지고,
+    /// 그 사이 또 ViewModel이 만들어지는 반복이 생긴다(테마 전환 때 앱이 멈췄던 원인, 10-14).
+    @ObservationIgnored private var readyHandlers: [() -> Void] = []
 
     init(prepareIndex: any PrepareSymbolIndexUseCase) {
         self.prepareIndex = prepareIndex
