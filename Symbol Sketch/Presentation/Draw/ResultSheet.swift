@@ -75,45 +75,10 @@ struct ResultSheet: View {
 
     @ViewBuilder
     private var content: some View {
-        switch viewModel.preparation {
-        case .checking, .preparing:
-            preparing
-        case .failed:
-            failure(String(localized: "심볼 인덱스를 읽지 못했어요")) {
-                Button("다시 준비하기") { viewModel.retryPreparation() }
-                    .buttonStyle(InvertedButtonStyle())
-            }
-        case .ready:
-            readyContent
-        }
-    }
-
-    @ViewBuilder
-    private var readyContent: some View {
-        switch viewModel.phase {
-        case .tooSmall:
-            message(String(localized: "조금 더 크게 그려 주세요"), detail: String(localized: "그림이 너무 작거나 획이 적어서 찾지 않았어요"))
-        case .failed(let reason):
-            message(String(localized: "찾지 못했어요"), detail: reason)
-        case .searching(showsSkeleton: true) where viewModel.matches.isEmpty:
-            SkeletonRows()
-        default:
-            if viewModel.matches.isEmpty {
-                #if DEBUG
-                if let seconds = viewModel.preparationSeconds {
-                    // 개발용: 실기기 준비 시간 측정(출시 빌드에는 없음)
-                    Text(verbatim: "[DEBUG] 심볼 준비 시간 \(String(format: "%.1f", seconds))초")
-                        .font(.footnote.monospacedDigit())
-                        .foregroundStyle(DSColor.danger)
-                        .accessibilityIdentifier("debugPreparationSeconds")
-                }
-                #endif
-                message(String(localized: "그림을 그리면 비슷한 심볼이\n여기에 나타나요"), detail: nil)
-            } else if viewModel.isSheetExpanded {
-                expandedList
-            } else {
-                topThree
-            }
+        if DrawStatusView.showsMatches(of: viewModel) {
+            if viewModel.isSheetExpanded { expandedList } else { topThree }
+        } else {
+            DrawStatusView(viewModel: viewModel)
         }
     }
 
@@ -165,49 +130,6 @@ struct ResultSheet: View {
             .padding(.top, Spacing.s)
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.matches.map(\.id))
-    }
-
-    private var preparing: some View {
-        let progress: Double = if case .preparing(let value) = viewModel.preparation { value } else { 0 }
-        return VStack(alignment: .leading, spacing: Spacing.s) {
-            HStack {
-                Text("심볼 준비 중").font(.subheadline)
-                Spacer()
-                Text(progress, format: .percent.precision(.fractionLength(0)))
-                    .font(.subheadline.monospacedDigit())
-            }
-            .foregroundStyle(DSColor.textPrimary)
-            ProgressView(value: progress)
-                .tint(DSColor.accent)
-            Text(viewModel.isRebuildingIndex ? "기기 안에서 심볼 인덱스를 다시 만들고 있어요" : "처음 한 번만 기기 안에서 심볼을 준비해요")
-                .font(.footnote)
-                .foregroundStyle(DSColor.textSecondary)
-        }
-        .padding(.top, Spacing.s)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func message(_ title: String, detail: String?) -> some View {
-        VStack(spacing: Spacing.xs) {
-            Text(title)
-                .font(.subheadline.weight(detail == nil ? .regular : .semibold))
-                .foregroundStyle(detail == nil ? DSColor.textSecondary : DSColor.textPrimary)
-            if let detail {
-                Text(detail).font(.footnote).foregroundStyle(DSColor.textSecondary)
-            }
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-        .padding(.top, Spacing.l)
-    }
-
-    private func failure(_ title: String, @ViewBuilder action: () -> some View) -> some View {
-        VStack(spacing: Spacing.m) {
-            Text(title).font(.subheadline).foregroundStyle(DSColor.textPrimary)
-            action()
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, Spacing.l)
     }
 
     // MARK: - 펼치기·접기

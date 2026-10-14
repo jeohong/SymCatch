@@ -26,19 +26,25 @@ struct DrawToolbar: View {
     }
 }
 
-/// 도구 묶음: 되돌리기 · 다시 하기 · 지우개 · 전체 지우기(그리기·온보딩 연습 공용)
+/// 도구 묶음: 되돌리기 · 다시 하기 · 지우개 · 전체 지우기(그리기·온보딩 연습 공용).
+/// Duo 반쯤 접힘에서는 캔버스 오른쪽 세로 열(48pt, 묶음 바탕 없음, DESIGN_NOTES 3.2).
 struct SketchToolGroup: View {
     let canvas: SketchCanvasController
+    var axis: Axis = .horizontal
+    var buttonSize: CGFloat = Metrics.toolButton
 
     var body: some View {
-        HStack(spacing: 0) {
-            ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", isEnabled: canvas.canUndo) { canvas.undo() }
-            ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", isEnabled: canvas.canRedo) { canvas.redo() }
-            ToolButton(title: "지우개", systemImage: "eraser", isOn: canvas.tool == .eraser) { canvas.toggleTool() }
-            ToolButton(title: "전체 지우기", systemImage: "trash", isEnabled: !canvas.isEmpty) { canvas.clear() }
+        let layout = axis == .horizontal
+            ? AnyLayout(HStackLayout(spacing: 0))
+            : AnyLayout(VStackLayout(spacing: Spacing.xs))
+        layout {
+            ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", size: buttonSize, isEnabled: canvas.canUndo) { canvas.undo() }
+            ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", size: buttonSize, isEnabled: canvas.canRedo) { canvas.redo() }
+            ToolButton(title: "지우개", systemImage: "eraser", size: buttonSize, isOn: canvas.tool == .eraser) { canvas.toggleTool() }
+            ToolButton(title: "전체 지우기", systemImage: "trash", size: buttonSize, isEnabled: !canvas.isEmpty) { canvas.clear() }
         }
-        .padding(Spacing.xxs)
-        .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
+        .padding(axis == .horizontal ? Spacing.xxs : 0)
+        .background(axis == .horizontal ? DSColor.bgSecondary : .clear, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
@@ -46,6 +52,7 @@ struct SketchToolGroup: View {
 private struct ToolButton: View {
     let title: LocalizedStringKey
     let systemImage: String
+    var size: CGFloat = Metrics.toolButton
     var isEnabled = true
     var isOn = false
     let action: () -> Void
@@ -56,7 +63,7 @@ private struct ToolButton: View {
                 .labelStyle(.iconOnly)
                 .font(.title3)
                 .foregroundStyle(isOn ? DSColor.bgPrimary : DSColor.textPrimary)
-                .frame(width: Metrics.toolButton, height: Metrics.toolButton)
+                .frame(width: size, height: size)
                 .background(isOn ? DSColor.textPrimary : .clear, in: RoundedRectangle(cornerRadius: Radius.button))
                 .opacity(isEnabled ? 1 : 0.3)
                 // 배경이 투명해도 44pt 틀 전체가 눌리게 한다.
@@ -70,10 +77,13 @@ private struct ToolButton: View {
     }
 }
 
-/// 찾기 버튼: 찾기 / 곧 찾아요(0.6초 채움) / 찾는 중 / 비활성
-private struct FindButton: View {
+/// 찾기 버튼: 찾기 / 곧 찾아요(0.6초 채움) / 찾는 중 / 비활성.
+/// Duo 반쯤 접힘에서는 오른쪽 열 아래 전체 폭, 높이 50(DESIGN_NOTES 3.2).
+struct FindButton: View {
     let phase: DrawViewModel.Phase
     let isEnabled: Bool
+    var height: CGFloat = Metrics.primaryButtonHeight
+    var fillsWidth = false
     let action: () -> Void
 
     @State private var pendingFill: CGFloat = 0
@@ -92,7 +102,7 @@ private struct FindButton: View {
             .font(.headline)
             .padding(.leading, Spacing.l)
             .padding(.trailing, Spacing.l + Spacing.xs)
-            .frame(minWidth: 104, minHeight: Metrics.primaryButtonHeight)
+            .frame(minWidth: 104, maxWidth: fillsWidth ? .infinity : nil, minHeight: height)
             .foregroundStyle(isEnabled ? DSColor.onAccent : DSColor.textSecondary)
             .background(alignment: .leading) {
                 ZStack(alignment: .leading) {

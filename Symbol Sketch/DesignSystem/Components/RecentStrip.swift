@@ -13,9 +13,6 @@ struct RecentStrip: View {
     let records: [FoundRecord]
     let onSelect: (FoundRecord) -> Void
 
-    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 20
-    @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 32
-
     var body: some View {
         HStack(spacing: Spacing.s) {
             Text("최근")
@@ -25,9 +22,7 @@ struct RecentStrip: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.s) {
                     ForEach(records) { record in
-                        Button { onSelect(record) } label: { chip(record) }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(record.symbolName)
+                        RecentChip(record: record) { onSelect(record) }
                     }
                 }
                 .padding(.trailing, Spacing.screen)
@@ -35,23 +30,36 @@ struct RecentStrip: View {
         }
         .frame(minHeight: Metrics.minTapTarget)
     }
+}
 
-    private func chip(_ record: FoundRecord) -> some View {
-        HStack(spacing: Spacing.s) {
-            Image(systemName: record.symbolName)
-                .font(.system(size: glyphSize))
-                .foregroundStyle(DSColor.textPrimary)
-                .frame(width: tileSize, height: tileSize)
-                .background(DSColor.bgPrimary, in: RoundedRectangle(cornerRadius: Radius.chip + 2))
-            Text(record.symbolName)
-                .font(DSFont.symbolNameSmall)
-                .foregroundStyle(DSColor.textPrimary)
-                .lineLimit(1)
+/// 최근 찾은 심볼 칩(홈 상단 스트립 · Duo 반쯤 접힘 오른쪽 열 공용, DESIGN_NOTES 3.3)
+struct RecentChip: View {
+    let record: FoundRecord
+    let action: () -> Void
+
+    @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .body) private var tileSize: CGFloat = 32
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: record.symbolName)
+                    .font(.system(size: glyphSize))
+                    .foregroundStyle(DSColor.textPrimary)
+                    .frame(width: tileSize, height: tileSize)
+                    .background(DSColor.bgPrimary, in: RoundedRectangle(cornerRadius: Radius.chip + 2))
+                Text(record.symbolName)
+                    .font(DSFont.symbolNameSmall)
+                    .foregroundStyle(DSColor.textPrimary)
+                    .lineLimit(1)
+            }
+            .padding(.leading, Spacing.xs + Spacing.xxs)
+            .padding(.trailing, Spacing.m)
+            .frame(minHeight: Metrics.minTapTarget)
+            .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.button))
         }
-        .padding(.leading, Spacing.xs + Spacing.xxs)
-        .padding(.trailing, Spacing.m)
-        .frame(minHeight: Metrics.minTapTarget)
-        .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.button))
+        .buttonStyle(.plain)
+        .accessibilityLabel(record.symbolName)
     }
 }
 

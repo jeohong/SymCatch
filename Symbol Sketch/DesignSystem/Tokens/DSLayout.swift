@@ -44,6 +44,8 @@ nonisolated enum Metrics {
     static let minTapTarget: CGFloat = 44
     /// 도구 버튼
     static let toolButton: CGFloat = 44
+    /// Duo 반쯤 접힘의 세로 도구 열 버튼(DESIGN_NOTES 3.2)
+    static let duoToolButton: CGFloat = 48
     /// 찾기 버튼·주 버튼 높이
     static let primaryButtonHeight: CGFloat = 48
     static let largeButtonHeight: CGFloat = 50
