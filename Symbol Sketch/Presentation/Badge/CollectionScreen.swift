@@ -88,6 +88,9 @@ struct CollectionScreen: View {
                 }
                 .padding(.horizontal, Spacing.screen)
             }
+            // 가로 스크롤은 기본적으로 안전 영역 밖(Duo 오른쪽 세로 바 밑)까지 그린다.
+            // 다른 내용과 같은 경계에서 멈추도록 자기 영역 안에서만 그린다.
+            .clipped()
         }
     }
 }
