@@ -120,14 +120,31 @@ final class AppContainer {
     }
 
     /// 심볼 인덱스 준비. 그리기 화면과 온보딩이 같은 준비를 함께 쓴다(앱에 하나).
-    private(set) lazy var indexPreparation = SymbolIndexPreparation(prepareIndex: appEngine.prepare)
+    private(set) lazy var indexPreparation = SymbolIndexPreparation(prepareIndex: drawPrepare)
+
+    /// 그리기·온보딩이 쓰는 준비와 검색. UI 테스트는 실행 인자로 오류·느린 준비·느린 검색을 만든다.
+    private var drawPrepare: any PrepareSymbolIndexUseCase {
+        #if DEBUG
+        UITestingStates.prepare(appEngine.prepare)
+        #else
+        appEngine.prepare
+        #endif
+    }
+
+    private var drawSearch: any SearchSymbolsUseCase {
+        #if DEBUG
+        UITestingStates.search(appEngine.search)
+        #else
+        appEngine.search
+        #endif
+    }
 
     // MARK: - ViewModel 팩토리
 
     func makeDrawViewModel(navigator: any DrawNavigating) -> DrawViewModel {
         DrawViewModel(
             indexPreparation: indexPreparation,
-            searchSymbols: appEngine.search,
+            searchSymbols: drawSearch,
             selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
             fetchRecent: DefaultFetchRecentRecordsUseCase(records: records),
             fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
@@ -159,7 +176,7 @@ final class AppContainer {
     func makeOnboardingViewModel(navigator: any OnboardingNavigating) -> OnboardingViewModel {
         OnboardingViewModel(
             indexPreparation: indexPreparation,
-            searchSymbols: appEngine.search,
+            searchSymbols: drawSearch,
             selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
             navigator: navigator
         )

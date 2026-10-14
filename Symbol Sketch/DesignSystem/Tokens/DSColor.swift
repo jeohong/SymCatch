@@ -15,8 +15,10 @@ enum DSColor {
     static let bgPrimary = Color(.bgPrimary)
     /// 바텀시트, 칩, 타일 바탕, 도구 묶음
     static let bgSecondary = Color(.bgSecondary)
-    /// 막대 바탕, 스켈레톤, 비활성 버튼
+    /// 막대 바탕, 비활성 버튼
     static let bgTertiary = Color(.bgTertiary)
+    /// 스켈레톤 자리 표시. 라이트는 bgTertiary와 같고, 다크는 결과 행(cellElevated)과 구분되도록 한 단계 밝다.
+    static let skeleton = Color(.skeleton)
     /// 상세·콜렉션·설정 같은 그룹 화면 배경
     static let bgGrouped = Color(.bgGrouped)
     /// 그룹 카드
