@@ -62,6 +62,13 @@ protocol CollectionNavigating: AnyObject {
     func showSettings()
 }
 
+/// 온보딩(S0)이 끝났음을 알리는 통로
+@MainActor
+protocol OnboardingNavigating: AnyObject {
+    /// 건너뛰기 · 나중에 할게요 · 연습에서 심볼을 고름. 축하할 것이 있으면 그리기 홈 위에 모달을 띄운다.
+    func finishOnboarding(celebration: Celebration?)
+}
+
 /// 설정(S8)이 화면 이동 의도를 알리는 통로
 @MainActor
 protocol SettingsNavigating: AnyObject {

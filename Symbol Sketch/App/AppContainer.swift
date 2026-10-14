@@ -38,8 +38,8 @@ final class AppContainer {
     /// 앱이 쓰는 인식 방식(계획서 7장 결정 7: B 윤곽선)
     static let recognitionMethod: RecognitionMethod = .visionOutline
 
-    /// 탭·내비게이션 상태. 앱 전체에서 하나.
-    let router = AppRouter()
+    /// 탭·내비게이션 상태. 앱 전체에서 하나. UI 테스트는 실행 인자로 온보딩을 끄거나 켠다.
+    let router = AppRouter(showsOnboarding: AppContainer.onboardingOverride)
 
     /// 인식 엔진은 한 번만 만들어 앱이 살아 있는 동안 유지한다(준비한 인덱스·윤곽선을 다시 만들지 않기 위함).
     /// 그리기 화면과 인식 실험이 같은 엔진을 공유한다.
@@ -89,6 +89,19 @@ final class AppContainer {
 
     /// UI 테스트 실행 인자: 기록을 메모리에만 저장
     static let uiTestingInMemoryArgument = "-UITestingInMemoryProgress"
+    /// UI 테스트 실행 인자: 온보딩 건너뛰기 / 항상 보이기
+    static let uiTestingSkipOnboardingArgument = "-UITestingSkipOnboarding"
+    static let uiTestingShowOnboardingArgument = "-UITestingShowOnboarding"
+
+    /// UI 테스트에서만 온보딩 표시 여부를 정한다. 그 밖에는 nil(첫 실행 여부를 따름).
+    private static var onboardingOverride: Bool? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains(uiTestingShowOnboardingArgument) { return true }
+        if arguments.contains(uiTestingSkipOnboardingArgument) { return false }
+        #endif
+        return nil
+    }
 
     /// Preview용: 앱 데이터와 섞이지 않도록 임시 폴더를 쓴다.
     static func preview() -> AppContainer {
@@ -106,11 +119,14 @@ final class AppContainer {
         _ = try? await DefaultReconcileBadgeTiersUseCase(badges: badges).execute(now: .now)
     }
 
+    /// 심볼 인덱스 준비. 그리기 화면과 온보딩이 같은 준비를 함께 쓴다(앱에 하나).
+    private(set) lazy var indexPreparation = SymbolIndexPreparation(prepareIndex: appEngine.prepare)
+
     // MARK: - ViewModel 팩토리
 
     func makeDrawViewModel(navigator: any DrawNavigating) -> DrawViewModel {
         DrawViewModel(
-            prepareIndex: appEngine.prepare,
+            indexPreparation: indexPreparation,
             searchSymbols: appEngine.search,
             selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
             fetchRecent: DefaultFetchRecentRecordsUseCase(records: records),
@@ -138,6 +154,15 @@ final class AppContainer {
 
     func makeBadgeDetailViewModel(symbolName: String, navigator: any CollectionNavigating) -> BadgeDetailViewModel {
         BadgeDetailViewModel(symbolName: symbolName, fetchBadges: DefaultFetchBadgesUseCase(badges: badges), navigator: navigator)
+    }
+
+    func makeOnboardingViewModel(navigator: any OnboardingNavigating) -> OnboardingViewModel {
+        OnboardingViewModel(
+            indexPreparation: indexPreparation,
+            searchSymbols: appEngine.search,
+            selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
+            navigator: navigator
+        )
     }
 
     func makeSettingsViewModel(navigator: any SettingsNavigating) -> SettingsViewModel {

@@ -17,6 +17,7 @@ final class EvaluationCollectionUITests: XCTestCase {
     @MainActor
     func test_손가락으로_끌면_그려지고_저장할_수_있다() throws {
         let app = XCUIApplication()
+        app.launchArguments.append("-UITestingSkipOnboarding")
         app.launch()
 
         app.openDeveloperTool("평가셋 수집")

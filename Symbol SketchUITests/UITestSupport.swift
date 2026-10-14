@@ -22,7 +22,7 @@ extension XCTestCase {
     @MainActor
     func launchWithInMemoryProgress() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments.append("-UITestingInMemoryProgress")
+        app.launchArguments += ["-UITestingInMemoryProgress", "-UITestingSkipOnboarding"]
         app.launch()
         return app
     }

@@ -15,6 +15,7 @@ struct RootTabView: View {
     @State private var drawViewModel: DrawViewModel
     @State private var recentViewModel: RecentViewModel
     @State private var collectionViewModel: CollectionViewModel
+    @State private var onboardingViewModel: OnboardingViewModel
 
     init(container: AppContainer) {
         self.container = container
@@ -23,6 +24,7 @@ struct RootTabView: View {
         _drawViewModel = State(initialValue: container.makeDrawViewModel(navigator: router))
         _recentViewModel = State(initialValue: container.makeRecentViewModel(navigator: router))
         _collectionViewModel = State(initialValue: container.makeCollectionViewModel(navigator: router))
+        _onboardingViewModel = State(initialValue: container.makeOnboardingViewModel(navigator: router))
     }
 
     var body: some View {
@@ -93,6 +95,14 @@ struct RootTabView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: router.celebration)
+        .fullScreenCover(isPresented: Binding(get: { router.isOnboardingPresented }, set: { router.isOnboardingPresented = $0 })) {
+            OnboardingScreen(viewModel: onboardingViewModel)
+        }
+        .onChange(of: router.isOnboardingPresented) { _, presented in
+            // 온보딩을 마치면 연습에서 고른 심볼이 최근·뱃지 표시에 바로 보이게 다시 읽는다.
+            guard !presented else { return }
+            Task { await drawViewModel.refreshProgress() }
+        }
         .task {
             await container.reconcileBadgeTiers()
             await drawViewModel.refreshProgress()   // 맞춘 등급을 결과 행 표시에 바로 반영

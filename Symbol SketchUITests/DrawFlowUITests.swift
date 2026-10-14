@@ -17,7 +17,7 @@ final class DrawFlowUITests: XCTestCase {
     @MainActor
     func test_그리고_결과를_탭해_이름을_복사한다() throws {
         let app = XCUIApplication()
-        app.launchArguments.append("-UITestingInMemoryProgress")
+        app.launchArguments += ["-UITestingInMemoryProgress", "-UITestingSkipOnboarding"]
         app.launch()
 
         // 첫 실행이면 심볼 준비를 기다린다(시뮬레이터는 CPU라 수 분 걸릴 수 있다).

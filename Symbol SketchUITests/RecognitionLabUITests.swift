@@ -17,6 +17,7 @@ final class RecognitionLabUITests: XCTestCase {
     @MainActor
     func test_방식A를_준비하고_그리면_결과가_나온다() throws {
         let app = XCUIApplication()
+        app.launchArguments.append("-UITestingSkipOnboarding")
         app.launch()
         app.openDeveloperTool("인식 실험")
 
@@ -41,6 +42,7 @@ final class RecognitionLabUITests: XCTestCase {
     @MainActor
     func test_방식B를_준비하고_그리면_결과가_나온다() throws {
         let app = XCUIApplication()
+        app.launchArguments.append("-UITestingSkipOnboarding")
         app.launch()
         app.openDeveloperTool("인식 실험")
         app.buttons["B 채움"].tap()
