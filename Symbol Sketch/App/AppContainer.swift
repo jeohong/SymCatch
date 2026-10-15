@@ -150,6 +150,7 @@ final class AppContainer {
     private(set) lazy var recentViewModel = makeRecentViewModel(navigator: router)
     private(set) lazy var collectionViewModel = makeCollectionViewModel(navigator: router)
     private(set) lazy var onboardingViewModel = makeOnboardingViewModel(navigator: router)
+    private(set) lazy var searchViewModel = makeSymbolSearchViewModel(navigator: router)
 
     // MARK: - ViewModel 팩토리
 
@@ -183,6 +184,14 @@ final class AppContainer {
 
     func makeBadgeDetailViewModel(symbolName: String, navigator: any CollectionNavigating) -> BadgeDetailViewModel {
         BadgeDetailViewModel(symbolName: symbolName, fetchBadges: DefaultFetchBadgesUseCase(badges: badges), navigator: navigator)
+    }
+
+    func makeSymbolSearchViewModel(navigator: any SearchNavigating) -> SymbolSearchViewModel {
+        SymbolSearchViewModel(
+            browse: DefaultBrowseSymbolsUseCase(catalog: symbolCatalog),
+            fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
+            navigator: navigator
+        )
     }
 
     func makeOnboardingViewModel(navigator: any OnboardingNavigating) -> OnboardingViewModel {

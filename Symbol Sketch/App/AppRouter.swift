@@ -11,15 +11,18 @@ enum AppTab: Hashable {
     case draw
     case recent
     case collection
+    /// 심볼 검색(S9, 2026-10-15 추가)
+    case search
 }
 
 /// 탭 선택과 탭별 내비게이션 경로를 가진다. 실제 경로 조작은 여기서만 한다.
 @MainActor @Observable
-final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, SettingsNavigating, OnboardingNavigating {
+final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, SettingsNavigating, OnboardingNavigating, SearchNavigating {
     var selectedTab: AppTab = .draw
     var drawPath: [DrawRoute] = []
     var recentPath: [RecentRoute] = []
     var collectionPath: [CollectionRoute] = []
+    var searchPath: [SearchRoute] = []
     /// 넓은 창(regular)에서 최근·콜렉션을 분할 화면(목록 + 상세)으로 보여 주는지(기획서 8A.1).
     /// RootTabView가 크기 클래스로 정한다. 좁은 창은 지금처럼 경로에 쌓는다.
     var isSplitLayout = false
@@ -68,6 +71,10 @@ final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, S
 
     func showDrawTab() {
         selectedTab = .draw
+    }
+
+    func showSearchDetail(_ request: SymbolDetailRequest) {
+        searchPath.append(.symbolDetail(request))
     }
 
     func showBadgeDetail(symbolName: String) {

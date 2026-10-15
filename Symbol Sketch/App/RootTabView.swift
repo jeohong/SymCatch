@@ -17,6 +17,7 @@ struct RootTabView: View {
     @State private var recentViewModel: RecentViewModel
     @State private var collectionViewModel: CollectionViewModel
     @State private var onboardingViewModel: OnboardingViewModel
+    @State private var searchViewModel: SymbolSearchViewModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     /// 넓은 창: 최근·콜렉션을 목록 + 상세 분할 화면으로(기획서 8A.1). 좁은 창은 iPhone과 같은 스택.
@@ -31,6 +32,7 @@ struct RootTabView: View {
         _recentViewModel = State(initialValue: container.recentViewModel)
         _collectionViewModel = State(initialValue: container.collectionViewModel)
         _onboardingViewModel = State(initialValue: container.onboardingViewModel)
+        _searchViewModel = State(initialValue: container.searchViewModel)
     }
 
     var body: some View {
@@ -62,6 +64,18 @@ struct RootTabView: View {
             }
             .tabItem { Label("콜렉션", systemImage: "rosette") }
             .tag(AppTab.collection)
+
+            // 심볼 검색(S9): 그리기와 별개로 글자로 찾기
+            NavigationStack(path: $router.searchPath) {
+                SymbolSearchScreen(viewModel: searchViewModel)
+                    .navigationDestination(for: SearchRoute.self) { route in
+                        switch route {
+                        case .symbolDetail(let request): symbolDetail(request)
+                        }
+                    }
+            }
+            .tabItem { Label("검색", systemImage: "magnifyingglass") }
+            .tag(AppTab.search)
         }
         .overlay {
             // 축하 모달(S4)은 탭 바까지 덮는다.

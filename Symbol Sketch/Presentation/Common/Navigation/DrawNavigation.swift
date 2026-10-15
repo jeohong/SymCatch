@@ -67,6 +67,19 @@ protocol CollectionNavigating: AnyObject {
 }
 
 /// 온보딩(S0)이 끝났음을 알리는 통로
+enum SearchRoute: Hashable {
+    case symbolDetail(SymbolDetailRequest)
+}
+
+/// 심볼 검색 탭(S9)
+@MainActor
+protocol SearchNavigating: AnyObject {
+    /// 타일을 누르면 심볼 상세(그림 비교 없음)
+    func showSearchDetail(_ request: SymbolDetailRequest)
+    /// 결과가 없을 때 "그려서 찾아보세요"
+    func showDrawTab()
+}
+
 @MainActor
 protocol OnboardingNavigating: AnyObject {
     /// 건너뛰기 · 나중에 할게요 · 연습에서 심볼을 고름. 축하할 것이 있으면 그리기 홈 위에 모달을 띄운다.
