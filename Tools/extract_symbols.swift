@@ -9,7 +9,7 @@
 //
 //  사용법:
 //    swift Tools/extract_symbols.swift [출력 경로] [SF Symbols.app 경로]
-//  기본 출력: "Symbol Sketch/Resources/symbols.json"
+//  기본 출력: "SymCatch/Resources/symbols.json"
 //
 //  규칙:
 //  - 로케일 변형(.ar, .hi, .ja, .ko, .rtl …)은 제외한다. 모양이 원본과 거의 같아 Top 10을 채우기 때문이다.
@@ -21,7 +21,7 @@
 import Foundation
 
 let arguments = CommandLine.arguments
-let outputPath = arguments.count > 1 ? arguments[1] : "Symbol Sketch/Resources/symbols.json"
+let outputPath = arguments.count > 1 ? arguments[1] : "SymCatch/Resources/symbols.json"
 let appPath = arguments.count > 2 ? arguments[2] : "/Applications/SF Symbols.app"
 let metadata = URL(fileURLWithPath: appPath).appendingPathComponent("Contents/Resources/Metadata")
 

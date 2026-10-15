@@ -19,7 +19,7 @@
 
 import Foundation
 
-let resources = URL(fileURLWithPath: "Symbol Sketch/Resources")
+let resources = URL(fileURLWithPath: "SymCatch/Resources")
 struct Catalog: Decodable {
     struct Symbol: Decodable { let name: String; let keywords: [String] }
     let symbols: [Symbol]

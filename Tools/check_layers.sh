@@ -27,11 +27,11 @@ check() {
     fi
 }
 
-check "Symbol Sketch/Presentation" "Storage|Recognition|SwiftData|Vision|CoreML" \
+check "SymCatch/Presentation" "Storage|Recognition|SwiftData|Vision|CoreML" \
     "Presentation은 Domain(UseCase 프로토콜)에만 의존해야 합니다"
-check "Symbol Sketch/DesignSystem" "Storage|Recognition|SwiftData|Vision|CoreML" \
+check "SymCatch/DesignSystem" "Storage|Recognition|SwiftData|Vision|CoreML" \
     "DesignSystem은 Storage·Recognition에 의존하면 안 됩니다"
-check "Packages/SymbolSketchKit/Sources/Domain" "SwiftUI|UIKit|SwiftData|Vision|CoreML|Accelerate|CoreGraphics|PencilKit|Storage|Recognition" \
+check "Packages/SymCatchKit/Sources/Domain" "SwiftUI|UIKit|SwiftData|Vision|CoreML|Accelerate|CoreGraphics|PencilKit|Storage|Recognition" \
     "Domain은 Foundation만 import할 수 있습니다"
 
 [ $status -eq 0 ] && echo "✅ 레이어 규칙 위반 없음"
