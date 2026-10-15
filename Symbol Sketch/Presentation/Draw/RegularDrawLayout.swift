@@ -94,8 +94,9 @@ struct RegularDrawLayout: View {
 struct ResultPanel: View {
     @Bindable var viewModel: DrawViewModel
     let columns: Int
-    /// 하드웨어 키보드가 흔한 넓은 창에서만 "⌘C 이름 복사"를 보여 준다.
-    var showsShortcutHint = true
+    /// "⌘C 이름 복사" 안내는 iPad에서만 보여 준다(펼친 Duo 같은 휴대폰의 넓은 창에서는 숨김).
+    /// 배치가 아니라 안내 문구 하나라 기기 종류로 정한다(CLAUDE.md 1장 5번은 레이아웃 분기 규칙).
+    var showsShortcutHint = UIDevice.current.userInterfaceIdiom == .pad
     /// 결과 행 대신 작은 카드(`DuoResultCard`)로 보여 준다. 한 줄 행이 들어가지 않는 좁은 열(Duo 바깥 화면 가로)용.
     var usesCards = false
 
