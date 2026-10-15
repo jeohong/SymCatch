@@ -28,7 +28,7 @@ struct SymbolSearchScreen: View {
         .scrollDismissesKeyboard(.immediately)
         .background(DSColor.bgGrouped)
         .navigationTitle("심볼 검색")
-        .searchable(text: $viewModel.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("이름이나 키워드로 검색"))
+        .searchable(text: $viewModel.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("하트, heart처럼 검색"))
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .task { await viewModel.load() }

@@ -30,7 +30,13 @@ final class SymbolSearchUITests: XCTestCase {
         XCTAssertTrue(app.buttons["suit.heart"].exists, "이름 중간에 heart가 있는 심볼도 나와야 한다")
         attach(app, "results")
 
-        heart.tap()
+        // 한국어로도 찾는다(사전: heart → 하트)
+        field.buttons.firstMatch.tap()   // 지우기(✕)
+        app.searchFields.firstMatch.typeText("하트")
+        XCTAssertTrue(app.buttons["heart"].waitForExistence(timeout: 5), "'하트'로 heart를 찾아야 한다")
+        attach(app, "results_korean")
+
+        app.buttons["heart"].tap()
         XCTAssertTrue(app.staticTexts["복사"].waitForExistence(timeout: 5), "상세로 가야 한다")
         XCTAssertFalse(app.staticTexts["내 그림과 비교"].exists, "검색에서 온 상세에는 그림 비교가 없다")
         app.navigationBars.buttons.element(boundBy: 0).tap()

@@ -142,6 +142,11 @@ final class AppContainer {
         #endif
     }
 
+    /// 한국어 심볼 검색 사전(앱 번들 `symbol_keywords_ko.json`, 계획서 7장 결정 22). 없으면 영어 검색만 된다.
+    private lazy var koreanDictionary: (any KoreanDictionaryRepository)? = Bundle.main
+        .url(forResource: "symbol_keywords_ko", withExtension: "json")
+        .map { BundledKoreanDictionaryRepository(fileURL: $0) }
+
     // MARK: - 탭 ViewModel (앱에 하나씩)
 
     /// 탭 화면의 ViewModel은 앱이 살아 있는 동안 하나씩만 둔다. 그리던 그림·목록 상태를 유지하고,
@@ -188,7 +193,7 @@ final class AppContainer {
 
     func makeSymbolSearchViewModel(navigator: any SearchNavigating) -> SymbolSearchViewModel {
         SymbolSearchViewModel(
-            browse: DefaultBrowseSymbolsUseCase(catalog: symbolCatalog),
+            browse: DefaultBrowseSymbolsUseCase(catalog: symbolCatalog, dictionary: koreanDictionary),
             fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
             navigator: navigator
         )
