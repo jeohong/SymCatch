@@ -18,6 +18,24 @@
           }
         }
       }
+    },
+    "CFBundleName" : {
+      "comment" : "짧은 앱 이름(홈 화면 이름과 같게)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SymCatch"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "심캐치"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

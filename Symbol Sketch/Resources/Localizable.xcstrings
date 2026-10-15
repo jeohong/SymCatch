@@ -130,6 +130,7 @@
       }
     },
     "%@ 기준(sHigh)" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "%@ 넘으면 뱃지" : {
@@ -609,6 +610,7 @@
       }
     },
     "가장 단순한 정답 심볼" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "가젯 덕후 끝판왕" : {
@@ -628,12 +630,15 @@
       }
     },
     "가져오기" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "가져오지 못했어요: %@" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "개발 도구" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "개인정보 보호 및 보안" : {
@@ -701,6 +706,7 @@
       }
     },
     "검색 %lldms · 원점수는 보정 전 엔진 점수" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "검색 결과" : {
@@ -736,9 +742,11 @@
       }
     },
     "검색 시간(점수 계산)" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "검색 중 %@" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "게임" : {
@@ -786,6 +794,7 @@
       }
     },
     "결과 내보내기" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "겹쳐 보기" : {
@@ -1045,9 +1054,11 @@
       }
     },
     "그린 사람 이름" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "그림 %lld장을 가져왔어요" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "그림과 가장 비슷한 심볼 10개를 유사도 순서로 보여 줘요. 원하는 심볼을 탭하면 이름과 코드를 바로 복사할 수 있어요." : {
@@ -1099,6 +1110,7 @@
       }
     },
     "그림이 부족해 보정값을 계산하지 못했어요" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "근손실 제로" : {
@@ -1374,6 +1386,7 @@
       }
     },
     "내 그림 %lld / %lld · 전체 %lld" : {
+      "extractionState" : "manual",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
@@ -1417,6 +1430,7 @@
       }
     },
     "내보내기" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "다시 시도" : {
@@ -1836,6 +1850,7 @@
       }
     },
     "모델 없이 선 사이 거리로 비교. 준비는 메모리에만(앱을 끄면 다시)" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "모두 보기" : {
@@ -1903,9 +1918,11 @@
       }
     },
     "모든 심볼을 다 그렸어요. 내보내기로 평가셋을 옮겨 주세요." : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "모양 보기" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "목표 · %@" : {
@@ -1989,6 +2006,7 @@
       }
     },
     "방식 비교(시험용)" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "방향 감각 만렙" : {
@@ -2228,6 +2246,7 @@
       }
     },
     "복잡도 %@" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "볼드체 입문" : {
@@ -2407,9 +2426,11 @@
       }
     },
     "상위 %@" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "상태 확인 중" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "새 뱃지" : {
@@ -2685,6 +2706,7 @@
       }
     },
     "시험용 결과" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "실버" : {
@@ -2960,12 +2982,15 @@
       }
     },
     "심볼 준비가 끝나지 않았어요. 그리기 탭에서 준비를 마친 뒤 실행하세요." : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "심볼을 먼저 준비해야 해요" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "아래 결과는 고른 점수 방식 기준이에요." : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "아직 없는 뱃지 · %@ 이상으로 그려 보세요" : {
@@ -3065,6 +3090,7 @@
       }
     },
     "엄격도별 결과" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "업적" : {
@@ -3132,6 +3158,7 @@
       }
     },
     "엉뚱한 1위가 뱃지 기준(%@)을 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 기준 이상인 비율" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "연결" : {
@@ -3199,6 +3226,7 @@
       }
     },
     "오답인데 뱃지 기준 이상이 자주 나온 심볼" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "오운완" : {
@@ -3362,6 +3390,7 @@
       }
     },
     "이 심볼을 기억으로 그려 주세요" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "이름" : {
@@ -3525,6 +3554,7 @@
       }
     },
     "인식 실험" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "인싸 오브 인싸" : {
@@ -3624,6 +3654,7 @@
       }
     },
     "작성자: %@" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "장바구니 담기" : {
@@ -3675,12 +3706,15 @@
       }
     },
     "저장하고 다음" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "저장하려면 그린 사람 이름을 입력하세요" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "저장했어요" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "전설" : {
@@ -3748,6 +3782,7 @@
       }
     },
     "점수 방식" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "접기" : {
@@ -3767,6 +3802,7 @@
       }
     },
     "정답 점수 분위" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "정보" : {
@@ -3818,15 +3854,19 @@
       }
     },
     "준비됨" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "준비에 %@초" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "준비하기" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "중앙값" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "지도" : {
@@ -4262,6 +4302,7 @@
       }
     },
     "추천 보정값" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "취소" : {
@@ -4537,6 +4578,7 @@
       }
     },
     "펜" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "편집" : {
@@ -4572,12 +4614,15 @@
       }
     },
     "평가 실행" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "평가셋 수집" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "평가셋 수집에서 모은 그림을 반으로 나눠, 절반으로 보정값을 정하고 나머지 절반으로 정확도를 재요. 시뮬레이터 결과는 의미가 없으니 실기기에서 실행하세요." : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "피드백" : {
@@ -4853,12 +4898,15 @@
       }
     },
     "A 윤곽 비교" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "B 윤곽선" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "B 채움" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "iOS %@" : {
@@ -4894,6 +4942,7 @@
       }
     },
     "M0 인식 프로토타입" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "Top 10 · 유사도순" : {
@@ -4913,9 +4962,11 @@
       }
     },
     "Vision 특징 벡터, 심볼을 윤곽선으로 바꿔 비교" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     },
     "Vision 특징 벡터, 심볼을 채운 모양 그대로 비교" : {
+      "extractionState" : "manual",
       "shouldTranslate" : false
     }
   },
