@@ -9,20 +9,6 @@ import Foundation
 import Testing
 @testable import Domain
 
-private struct ListCatalog: SymbolCatalogRepository {
-    let symbols: [SymbolMeta]
-    var categoryList: [SymbolCategory] = []
-
-    func allSymbols() async throws -> [SymbolMeta] { symbols }
-    func categories() async throws -> [SymbolCategory] { categoryList }
-    func symbol(named name: String) async throws -> SymbolMeta? { symbols.first { $0.name == name } }
-    func symbols(inFamily family: String) async throws -> [SymbolMeta] { symbols.filter { $0.family == family } }
-}
-
-private func meta(_ name: String, minOS: String = "13.0", categories: [String] = []) -> SymbolMeta {
-    SymbolMeta(name: name, family: VariantGrouper.family(of: name), categories: categories, keywords: [], minOS: minOS)
-}
-
 struct OSVersionTests {
     @Test func 문자열을_읽고_비교한다() {
         #expect(OSVersion("17.0") == OSVersion(major: 17))
@@ -76,7 +62,7 @@ struct FetchCollectionUseCaseTests {
         #expect(summary.categories[2].names == ["target"])
     }
 
-    @Test func 뱃지는_최근_획득순이고_업적은_세_개_모두() async throws {
+    @Test func 뱃지는_최근_획득순이고_업적은_일반과_카테고리_모두() async throws {
         let badges = InMemoryBadges()
         try await badges.save(SymbolBadge(symbolName: "heart", tier: .gold, bestSimilarity: 99, bestSketch: Fixtures.sketch, earnedAt: Fixtures.date()))
         try await badges.save(SymbolBadge(symbolName: "leaf", tier: .bronze, bestSimilarity: 91, bestSketch: Fixtures.sketch, earnedAt: Fixtures.date(days: 1)))
@@ -85,7 +71,10 @@ struct FetchCollectionUseCaseTests {
 
         #expect(summary.badges.map(\.symbolName) == ["leaf", "heart"])
         #expect(summary.count(of: .gold) == 1 && summary.count(of: .silver) == 0)
-        #expect(summary.achievements.map(\.id) == AchievementID.allCases)
+        // 일반 8개 뒤에 카테고리마다 입문·전설. 카테고리 업적 목표는 카테고리 크기로 정해진다.
+        #expect(summary.achievements.map(\.id) == AchievementID.general + [
+            .categoryStarter("health"), .categoryMaster("health"), .categoryStarter("nature"), .categoryMaster("nature"),
+        ].filter { id in summary.categories.contains { $0.category.key == id.categoryKey } })
     }
 
     @Test func 예전_OS에서는_분모에서_새_심볼이_빠진다() async throws {

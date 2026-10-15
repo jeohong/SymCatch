@@ -154,6 +154,7 @@ struct ProgressPersistenceTests {
                 badges: SwiftDataBadgeRepository(modelContainer: container),
                 achievements: SwiftDataAchievementRepository(modelContainer: container),
                 stats: SwiftDataUserStatsRepository(modelContainer: container),
+                catalog: EmptyCatalog(),
                 calendar: Samples.utcCalendar
             )
             let match = SymbolMatch(name: "heart", variants: [], similarity: 92)
@@ -170,7 +171,16 @@ struct ProgressPersistenceTests {
         #expect(records.map(\.symbolName) == ["heart"])
         #expect(records.first?.sketch == Samples.sketch)
         #expect(badge?.tier == .silver)
-        #expect(achievements.filter(\.isUnlocked).map(\.id) == [.firstStroke, .sharpshooter])
+        // 획 1개로 92%를 골라 "한 붓에"도 달성. 일반 업적 순서로 돌아온다.
+        #expect(achievements.filter(\.isUnlocked).map(\.id) == [.firstStroke, .sharpshooter, .oneStroke])
         #expect(stats.streakDays == 1)
     }
+}
+
+/// 카테고리가 없는 카탈로그(카테고리 업적 없이 일반 업적만 판정)
+private struct EmptyCatalog: SymbolCatalogRepository {
+    func allSymbols() async throws -> [SymbolMeta] { [] }
+    func categories() async throws -> [SymbolCategory] { [] }
+    func symbol(named name: String) async throws -> SymbolMeta? { nil }
+    func symbols(inFamily family: String) async throws -> [SymbolMeta] { [] }
 }

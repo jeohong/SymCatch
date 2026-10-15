@@ -46,6 +46,9 @@ actor InMemoryStats: UserStatsRepository {
 enum Fixtures {
     static let sketch = Sketch(strokes: [[SketchPoint(x: 0.1, y: 0.1), SketchPoint(x: 0.9, y: 0.9)]])
     static let otherSketch = Sketch(strokes: [[SketchPoint(x: 0.2, y: 0.8), SketchPoint(x: 0.8, y: 0.2)]])
+    /// 획 2개("한 붓에"가 아닌 그림)
+    static let twoStrokes = Sketch(strokes: [[SketchPoint(x: 0.1, y: 0.1), SketchPoint(x: 0.9, y: 0.9)],
+                                             [SketchPoint(x: 0.9, y: 0.1), SketchPoint(x: 0.1, y: 0.9)]])
 
     /// 2026-10-11 12:00 (UTC) 기준으로 `days`일 뒤
     static func date(days: Int = 0, hours: Int = 0) -> Date {
@@ -57,4 +60,20 @@ enum Fixtures {
         calendar.timeZone = TimeZone(identifier: "UTC")!
         return calendar
     }
+}
+
+/// 주어진 목록을 그대로 돌려주는 카탈로그
+struct ListCatalog: SymbolCatalogRepository {
+    let symbols: [SymbolMeta]
+    var categoryList: [SymbolCategory] = []
+
+    func allSymbols() async throws -> [SymbolMeta] { symbols }
+    func categories() async throws -> [SymbolCategory] { categoryList }
+    func symbol(named name: String) async throws -> SymbolMeta? { symbols.first { $0.name == name } }
+    func symbols(inFamily family: String) async throws -> [SymbolMeta] { symbols.filter { $0.family == family } }
+}
+
+/// 이름으로 family를 정한 심볼 메타
+func meta(_ name: String, minOS: String = "13.0", categories: [String] = []) -> SymbolMeta {
+    SymbolMeta(name: name, family: VariantGrouper.family(of: name), categories: categories, keywords: [], minOS: minOS)
 }

@@ -58,7 +58,8 @@ struct PrepareSymbolIndexUseCaseTests {
 struct ResetProgressUseCaseTests {
     @Test func 기록_뱃지_업적_통계를_모두_지운다() async throws {
         let records = InMemoryFoundRecords(), badges = InMemoryBadges(), achievements = InMemoryAchievements(), stats = InMemoryStats()
-        let select = DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats, calendar: Fixtures.utcCalendar)
+        let select = DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats,
+                                                catalog: ListCatalog(symbols: []), calendar: Fixtures.utcCalendar)
         _ = try await select.execute(match: SymbolMatch(name: "heart", variants: [], similarity: 92), sketch: Fixtures.sketch, now: Fixtures.date())
         #expect(try await badges.all().count == 1)
 

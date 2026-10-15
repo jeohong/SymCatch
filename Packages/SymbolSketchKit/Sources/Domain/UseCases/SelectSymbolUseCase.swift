@@ -39,6 +39,8 @@ public struct DefaultSelectSymbolUseCase: SelectSymbolUseCase {
     private let badges: any BadgeRepository
     private let achievements: any AchievementRepository
     private let stats: any UserStatsRepository
+    /// 카테고리 업적 판정용(카테고리별 대표 심볼)
+    private let catalog: any SymbolCatalogRepository
     private let calendar: Calendar
 
     public init(
@@ -46,12 +48,14 @@ public struct DefaultSelectSymbolUseCase: SelectSymbolUseCase {
         badges: any BadgeRepository,
         achievements: any AchievementRepository,
         stats: any UserStatsRepository,
+        catalog: any SymbolCatalogRepository,
         calendar: Calendar = .current
     ) {
         self.records = records
         self.badges = badges
         self.achievements = achievements
         self.stats = stats
+        self.catalog = catalog
         self.calendar = calendar
     }
 
@@ -90,12 +94,16 @@ public struct DefaultSelectSymbolUseCase: SelectSymbolUseCase {
         // 3) 연속 출석·업적
         let updatedStats = StreakCalculator.update(try await stats.load(), now: now, calendar: calendar)
         try await stats.save(updatedStats)
-        let evaluation = AchievementEvaluator.evaluate(
-            current: try await achievements.all(),
+        // 한 붓에: 획 1개로 그려 뱃지 기준 이상인 뱃지 대상 심볼을 골랐을 때(기획서 3.2)
+        let completedOneStroke = sketch.strokes.count == 1 && match.isBadgeEligible
+            && match.similarity >= BadgeTierPolicy.threshold
+        let input = AchievementInput(
             stats: updatedStats,
-            badgeCount: try await badges.all().count,
-            now: now
+            badges: try await badges.all(),
+            categories: AchievementCategory.make(symbols: try await catalog.allSymbols(), categories: try await catalog.categories()),
+            completedOneStroke: completedOneStroke
         )
+        let evaluation = AchievementEvaluator.evaluate(current: try await achievements.all(), input: input, now: now)
         try await achievements.save(evaluation.all)
 
         record = try await records.record(forSymbol: match.name) ?? record

@@ -52,7 +52,7 @@ struct CollectionScreen: View {
                     if summary.badges.isEmpty {
                         emptyHint
                     }
-                    achievements(summary.achievements)
+                    achievementsRow
                     ForEach(summary.categories, id: \.category.key) { category in
                         CategorySection(category: category, viewModel: viewModel, selectedName: selectedBadgeName)
                     }
@@ -76,15 +76,30 @@ struct CollectionScreen: View {
         .padding(.horizontal, Spacing.screen)
     }
 
-    private func achievements(_ achievements: [Achievement]) -> some View {
+    /// 일반 업적 가로 줄 + "전체 보기"(기획서 3.2)
+    private var achievementsRow: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            Text("업적")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(DSColor.textPrimary)
-                .padding(.horizontal, Spacing.screen)
+            HStack(alignment: .firstTextBaseline) {
+                Text("업적")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(DSColor.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button { viewModel.openAchievements() } label: {
+                    HStack(spacing: Spacing.xs) {
+                        Text("전체 보기")
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold))
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .frame(minHeight: Metrics.minTapTarget)
+                }
+                .tint(DSColor.accent)
+                .accessibilityLabel("업적 전체 보기")
+            }
+            .padding(.horizontal, Spacing.screen)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: Spacing.s + Spacing.xxs) {
-                    ForEach(achievements) { achievement in
+                    ForEach(viewModel.featuredAchievements) { achievement in
                         AchievementCard(achievement: achievement, status: viewModel.statusText(for: achievement))
                     }
                 }
@@ -175,9 +190,11 @@ struct BarProgressStyle: ProgressViewStyle {
 
 // MARK: - 업적 카드
 
-private struct AchievementCard: View {
+struct AchievementCard: View {
     let achievement: Achievement
     let status: String
+    /// 가로 줄에서는 150 고정, 격자(업적 전체 보기)에서는 nil로 칸을 채운다.
+    var fixedWidth: CGFloat? = 150
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
@@ -196,7 +213,8 @@ private struct AchievementCard: View {
                 .foregroundStyle(DSColor.textSecondary)
         }
         .padding(Spacing.m + Spacing.xxs)
-        .frame(width: 150, alignment: .leading)
+        .frame(width: fixedWidth, alignment: .leading)
+        .frame(maxWidth: fixedWidth == nil ? .infinity : nil, alignment: .leading)
         .background(DSColor.cell, in: RoundedRectangle(cornerRadius: Radius.card))
         .accessibilityElement(children: .combine)
     }
@@ -220,6 +238,22 @@ private struct CategorySection: View {
                 Text("\(viewModel.earnedCount(in: category)) / \(category.names.count)")
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(DSColor.textSecondary)
+                // 카테고리 업적 입문·전설 달성 표시(기획서 3.2)
+                let categoryAchievements = viewModel.categoryAchievements(for: category.category.key)
+                if !categoryAchievements.isEmpty {
+                    HStack(spacing: Spacing.xs) {
+                        ForEach(categoryAchievements) { achievement in
+                            BadgeView(systemImage: achievement.id.systemImage,
+                                      style: achievement.isUnlocked ? .achievement : .locked, size: 24, ringWidth: 2)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(categoryAchievements.map { achievement in
+                        achievement.isUnlocked
+                            ? String(localized: "\(achievement.id.displayName) 달성")
+                            : String(localized: "\(achievement.id.displayName) 미달성")
+                    }.joined(separator: ", "))
+                }
             }
             .padding(.horizontal, Spacing.screen)
 

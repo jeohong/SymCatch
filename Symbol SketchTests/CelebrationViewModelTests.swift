@@ -26,7 +26,7 @@ struct CelebrationViewModelTests {
         SelectionOutcome(
             record: FoundRecord(symbolName: "heart", sketch: sketch, similarity: 96, foundAt: date),
             badgeAward: award,
-            newAchievements: achievements.map { Achievement(id: $0, progress: $0.goal, unlockedAt: date) }
+            newAchievements: achievements.map { Achievement(id: $0, progress: $0.fixedGoal ?? 1, unlockedAt: date) }
         )
     }
 

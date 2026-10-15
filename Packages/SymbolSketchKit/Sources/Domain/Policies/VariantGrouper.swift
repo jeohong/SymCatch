@@ -56,4 +56,15 @@ public extension VariantGrouper {
         let parts = name.split(separator: ".").filter { $0 != "fill" }
         return parts.isEmpty ? name : parts.joined(separator: ".")
     }
+
+    /// 카탈로그에서 family마다 대표(채우지 않은 기본 모양) 하나만 고른다. 콜렉션 격자·카테고리 업적 공용.
+    /// `fill` 수가 같으면 이름 오름차순.
+    static func representatives(of symbols: [SymbolMeta]) -> [SymbolMeta] {
+        Dictionary(grouping: symbols, by: \.family).values.compactMap { members in
+            members.min { lhs, rhs in
+                let (left, right) = (fillCount(lhs.name), fillCount(rhs.name))
+                return left != right ? left < right : lhs.name < rhs.name
+            }
+        }
+    }
 }

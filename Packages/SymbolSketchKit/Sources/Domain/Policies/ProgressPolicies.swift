@@ -30,31 +30,77 @@ public enum StreakCalculator {
     }
 }
 
-/// 업적 진행 상황 갱신(MVP 3종)
+/// 카테고리 업적 판정용 묶음: 카테고리 키와 그 안의 대표 심볼 family(기획서 3.2).
+public struct AchievementCategory: Sendable, Hashable {
+    public let key: String
+    public let families: Set<String>
+
+    public init(key: String, families: Set<String>) {
+        self.key = key
+        self.families = families
+    }
+
+    /// 카탈로그에서 카테고리별 대표 심볼 family를 모은다. 콜렉션 격자와 같은 대표 규칙, "기타"는 제외.
+    public static func make(symbols: [SymbolMeta], categories: [SymbolCategory]) -> [AchievementCategory] {
+        let representatives = VariantGrouper.representatives(of: symbols)
+        return categories.compactMap { category in
+            let families = Set(representatives.filter { $0.categories.contains(category.key) }.map(\.family))
+            return families.isEmpty ? nil : AchievementCategory(key: category.key, families: families)
+        }
+    }
+}
+
+/// 업적 판정에 넣는 값(이번 선택까지 반영한 상태)
+public struct AchievementInput: Sendable {
+    public var stats: UserStats
+    public var badges: [SymbolBadge]
+    public var categories: [AchievementCategory]
+    /// 이번 선택이 "한 붓에" 조건(획 1개 · 뱃지 기준 이상 · 뱃지 대상)을 채웠는지
+    public var completedOneStroke: Bool
+
+    public init(stats: UserStats, badges: [SymbolBadge], categories: [AchievementCategory], completedOneStroke: Bool = false) {
+        self.stats = stats
+        self.badges = badges
+        self.categories = categories
+        self.completedOneStroke = completedOneStroke
+    }
+}
+
+/// 업적 진행 상황 갱신(기획서 3.2, 계획서 7장 결정 20)
 public enum AchievementEvaluator {
+    /// 화면·저장 순서의 전체 업적과 목표값: 일반 8개, 그다음 카테고리마다 입문·전설.
+    public static func catalog(categories: [AchievementCategory]) -> [(id: AchievementID, goal: Int)] {
+        AchievementID.general.map { ($0, $0.fixedGoal ?? 1) } + categories.flatMap { category in
+            [(AchievementID.categoryStarter(category.key), min(AchievementID.categoryStarterGoal, category.families.count)),
+             (AchievementID.categoryMaster(category.key), category.families.count)]
+        }
+    }
+
     /// - Parameters:
     ///   - current: 저장된 업적들(없는 업적은 진행 0으로 본다)
-    ///   - stats: 이번 선택까지 반영한 통계
-    ///   - badgeCount: 이번 선택까지 반영한 심볼 뱃지 수
-    /// - Returns: 모든 업적의 새 상태와, 이번에 새로 달성한 업적
-    public static func evaluate(
-        current: [Achievement],
-        stats: UserStats,
-        badgeCount: Int,
-        now: Date
-    ) -> (all: [Achievement], newlyUnlocked: [Achievement]) {
+    ///   - input: 이번 선택까지 반영한 통계·뱃지·카테고리
+    /// - Returns: 모든 업적의 새 상태와, 이번에 새로 달성한 업적. 진행은 줄지 않는다(연속 출석이 끊겨도).
+    public static func evaluate(current: [Achievement], input: AchievementInput, now: Date) -> (all: [Achievement], newlyUnlocked: [Achievement]) {
         let byID = Dictionary(current.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let earnedFamilies = Set(input.badges.map { VariantGrouper.family(of: $0.symbolName) })
+        let goldOrBetter = input.badges.filter { $0.tier >= .gold }.count
         var all: [Achievement] = []
         var unlocked: [Achievement] = []
 
-        for id in AchievementID.allCases {
-            var achievement = byID[id] ?? Achievement(id: id)
-            let progress = switch id {
-            case .firstStroke: min(stats.totalSelections, id.goal)
-            case .sharpshooter, .collector10: min(badgeCount, id.goal)
+        for (id, goal) in catalog(categories: input.categories) {
+            let measured: Int = switch id {
+            case .firstStroke: input.stats.totalSelections
+            case .sharpshooter, .collector10, .collector50, .collector100: input.badges.count
+            case .oneStroke: input.completedOneStroke ? 1 : 0
+            case .goldHand: goldOrBetter
+            case .streak7: input.stats.streakDays
+            case .categoryStarter(let key), .categoryMaster(let key):
+                input.categories.first { $0.key == key }.map { $0.families.intersection(earnedFamilies).count } ?? 0
             }
-            achievement.progress = max(achievement.progress, progress)
-            if !achievement.isUnlocked, achievement.progress >= achievement.goal {
+            var achievement = byID[id] ?? Achievement(id: id)
+            achievement.goal = goal
+            achievement.progress = max(achievement.progress, min(measured, goal))
+            if !achievement.isUnlocked, achievement.progress >= goal {
                 achievement.unlockedAt = now
                 unlocked.append(achievement)
             }

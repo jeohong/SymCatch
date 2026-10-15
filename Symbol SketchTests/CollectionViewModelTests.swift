@@ -27,7 +27,9 @@ private final class SpyCollectionNavigator: CollectionNavigating {
     var challenges: [String] = []
     var wentToDraw = 0
     var openedSettings = 0
+    var openedAchievements = 0
     func showSettings() { openedSettings += 1 }
+    func showAchievements() { openedAchievements += 1 }
     func showBadgeDetail(symbolName: String) { badgeDetails.append(symbolName) }
     func showCollectionSymbolDetail(_ request: SymbolDetailRequest) { symbolDetails.append(request) }
     func startChallenge(symbolName: String) { challenges.append(symbolName) }
@@ -136,5 +138,53 @@ struct BadgeDetailViewModelTests {
 
         #expect(navigator.symbolDetails == [SymbolDetailRequest(name: "pills", sketch: nil, similarity: nil)])
         #expect(viewModel.challengeTitle == "그려서 도전하기")
+    }
+
+    // MARK: - 업적(기획서 3.2)
+
+    private func achievementSummary() -> CollectionSummary {
+        CollectionSummary(
+            badges: [badge("leaf.fill", .bronze)],
+            achievements: [
+                Achievement(id: .firstStroke, progress: 1, unlockedAt: date),
+                Achievement(id: .sharpshooter, progress: 1, unlockedAt: date.addingTimeInterval(60)),
+                Achievement(id: .collector10, progress: 1),
+                Achievement(id: .streak7, progress: 5),
+                Achievement(id: .categoryStarter("nature"), progress: 1, goal: 10),
+                Achievement(id: .categoryMaster("nature"), progress: 1, goal: 178),
+            ],
+            totalSymbolCount: 1_000,
+            categories: [CategorySymbols(category: SymbolCategory(key: "nature", label: "Nature", icon: "leaf"), names: ["leaf", "tree"])]
+        )
+    }
+
+    @Test func 업적_줄은_일반_업적만_미달성을_진행률_순으로_먼저() async {
+        let viewModel = CollectionViewModel(fetchCollection: StubCollection(summary: achievementSummary()), navigator: nil)
+        await viewModel.load()
+        // 미달성: 연속 출석(5/7) → 수집가 10(1/10), 그다음 달성(최근 달성순)
+        #expect(viewModel.featuredAchievements.map(\.id) == [.streak7, .collector10, .sharpshooter, .firstStroke])
+        #expect(viewModel.unlockedAchievementCount == 2)
+        #expect(viewModel.achievementCount == 6)
+    }
+
+    @Test func 카테고리_업적은_입문과_전설() async {
+        let viewModel = CollectionViewModel(fetchCollection: StubCollection(summary: achievementSummary()), navigator: nil)
+        await viewModel.load()
+        #expect(viewModel.categoryAchievements(for: "nature").map(\.id) == [.categoryStarter("nature"), .categoryMaster("nature")])
+        #expect(viewModel.categoryAchievements(for: "uncategorized").isEmpty)
+    }
+
+    @Test func 변형_이름으로_받은_뱃지도_대표_칸에_보인다() async {
+        let viewModel = CollectionViewModel(fetchCollection: StubCollection(summary: achievementSummary()), navigator: nil)
+        await viewModel.load()
+        #expect(viewModel.badge(for: "leaf")?.symbolName == "leaf.fill")
+        #expect(viewModel.earnedCount(in: achievementSummary().categories[0]) == 1)
+    }
+
+    @Test func 전체_보기를_누르면_업적_화면으로() {
+        let navigator = SpyCollectionNavigator()
+        let viewModel = CollectionViewModel(fetchCollection: StubCollection(summary: achievementSummary()), navigator: navigator)
+        viewModel.openAchievements()
+        #expect(navigator.openedAchievements == 1)
     }
 }

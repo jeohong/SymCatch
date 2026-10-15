@@ -111,12 +111,15 @@ public actor SwiftDataAchievementRepository: AchievementRepository, ModelActor {
         self.modelExecutor = DefaultSerialModelExecutor(modelContext: ModelContext(modelContainer))
     }
 
-    /// `AchievementID` 선언 순서로 돌려준다.
+    /// 일반 업적은 `AchievementID.general` 순서, 카테고리 업적은 그 뒤에 저장값 이름순으로 돌려준다.
     public func all() async throws -> [Achievement] {
-        let order = Dictionary(uniqueKeysWithValues: AchievementID.allCases.enumerated().map { ($1, $0) })
+        let order = Dictionary(uniqueKeysWithValues: AchievementID.general.enumerated().map { ($1, $0) })
         return try modelContext.fetch(FetchDescriptor<AchievementEntityModel>())
             .compactMap(ProgressMappers.toDomain)
-            .sorted { order[$0.id, default: .max] < order[$1.id, default: .max] }
+            .sorted { lhs, rhs in
+                let (left, right) = (order[lhs.id, default: .max], order[rhs.id, default: .max])
+                return left != right ? left < right : lhs.id.rawValue < rhs.id.rawValue
+            }
     }
 
     public func save(_ achievements: [Achievement]) async throws {

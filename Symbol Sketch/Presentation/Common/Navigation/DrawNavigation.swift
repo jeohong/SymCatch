@@ -48,6 +48,8 @@ enum CollectionRoute: Hashable {
     case badgeDetail(symbolName: String)
     case symbolDetail(SymbolDetailRequest)
     case settings
+    /// 업적 전체 보기(기획서 3.2)
+    case achievements
 }
 
 /// 콜렉션(S6)·뱃지 상세(S7)가 화면 이동 의도를 알리는 통로
@@ -60,6 +62,8 @@ protocol CollectionNavigating: AnyObject {
     func showDrawTab()
     /// 오른쪽 위 톱니(S8)
     func showSettings()
+    /// 업적 "전체 보기"
+    func showAchievements()
 }
 
 /// 온보딩(S0)이 끝났음을 알리는 통로

@@ -86,6 +86,10 @@ final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, S
         showCollectionDetail(.settings)
     }
 
+    func showAchievements() {
+        showCollectionDetail(.achievements)
+    }
+
     /// 분할 화면이면 오른쪽 상세를 바꾸고(이어진 경로는 비움), 아니면 경로에 쌓는다.
     private func showCollectionDetail(_ route: CollectionRoute) {
         if isSplitLayout {

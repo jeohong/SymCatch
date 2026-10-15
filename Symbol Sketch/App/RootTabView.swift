@@ -83,8 +83,9 @@ struct RootTabView: View {
             Task { await drawViewModel.refreshProgress() }
         }
         .task {
-            await container.reconcileBadgeTiers()
+            await container.reconcileProgress()
             await drawViewModel.refreshProgress()   // 맞춘 등급을 결과 행 표시에 바로 반영
+            await collectionViewModel.load()        // 맞춘 업적을 콜렉션에 바로 반영
         }
         .onChange(of: isSplit, initial: true) { _, split in
             router.isSplitLayout = split
@@ -188,6 +189,8 @@ struct RootTabView: View {
             symbolDetail(request)
         case .settings:
             SettingsScreen(viewModel: container.makeSettingsViewModel(navigator: router))
+        case .achievements:
+            AchievementsScreen(viewModel: collectionViewModel)
         }
     }
 

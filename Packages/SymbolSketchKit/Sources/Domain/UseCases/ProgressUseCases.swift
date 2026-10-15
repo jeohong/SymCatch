@@ -149,6 +149,39 @@ public struct CollectionSummary: Sendable, Hashable {
     }
 }
 
+// MARK: - 업적 맞추기(앱 시작 시)
+
+public protocol ReconcileAchievementsUseCase: Sendable {
+    /// 지금 가진 뱃지·통계로 업적 진행을 다시 계산해 저장한다. 조건을 채운 업적은 조용히 달성 처리한다(축하 모달 없음).
+    /// 업적이 늘어난 업데이트 뒤에 이미 받은 뱃지가 반영되도록 앱을 켤 때 부른다(기획서 3.2).
+    func execute(now: Date) async throws
+}
+
+public struct DefaultReconcileAchievementsUseCase: ReconcileAchievementsUseCase {
+    private let achievements: any AchievementRepository
+    private let badges: any BadgeRepository
+    private let stats: any UserStatsRepository
+    private let catalog: any SymbolCatalogRepository
+
+    public init(achievements: any AchievementRepository, badges: any BadgeRepository,
+                stats: any UserStatsRepository, catalog: any SymbolCatalogRepository) {
+        self.achievements = achievements
+        self.badges = badges
+        self.stats = stats
+        self.catalog = catalog
+    }
+
+    public func execute(now: Date) async throws {
+        let input = AchievementInput(
+            stats: try await stats.load(),
+            badges: try await badges.all(),
+            categories: AchievementCategory.make(symbols: try await catalog.allSymbols(), categories: try await catalog.categories())
+        )
+        let evaluation = AchievementEvaluator.evaluate(current: try await achievements.all(), input: input, now: now)
+        try await achievements.save(evaluation.all)
+    }
+}
+
 public protocol FetchCollectionUseCase: Sendable {
     func execute() async throws -> CollectionSummary
 }
@@ -167,10 +200,8 @@ public struct DefaultFetchCollectionUseCase: FetchCollectionUseCase {
     public func execute() async throws -> CollectionSummary {
         let symbols = try await catalog.allSymbols()
         let categories = try await catalog.categories()
-        // 같은 family는 대표(기본 모양) 하나만 격자에 둔다. 검색 결과 묶기와 같은 규칙.
-        let representatives = Dictionary(grouping: symbols, by: \.family).values.compactMap { members in
-            members.min { fillCount($0.name) != fillCount($1.name) ? fillCount($0.name) < fillCount($1.name) : $0.name < $1.name }
-        }
+        // 같은 family는 대표(기본 모양) 하나만 격자에 둔다. 검색 결과 묶기·카테고리 업적과 같은 규칙.
+        let representatives = VariantGrouper.representatives(of: symbols)
         var byCategory = categories.map { category in
             CategorySymbols(category: category, names: representatives.filter { $0.categories.contains(category.key) }.map(\.name).sorted())
         }.filter { !$0.names.isEmpty }
@@ -183,17 +214,20 @@ public struct DefaultFetchCollectionUseCase: FetchCollectionUseCase {
 
         let stored = try await achievements.all()
         let storedByID = Dictionary(stored.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        // 전체 업적(일반 + 카테고리)에 목표값을 붙인다. 진행·달성은 저장된 값(앱 시작 때 맞춘다).
+        let achievementCategories = AchievementCategory.make(symbols: symbols, categories: categories)
+        let achievementList = AchievementEvaluator.catalog(categories: achievementCategories).map { id, goal in
+            let saved = storedByID[id]
+            return Achievement(id: id, progress: min(saved?.progress ?? 0, goal), unlockedAt: saved?.unlockedAt, goal: goal)
+        }
         return CollectionSummary(
             badges: try await badges.all().sorted { $0.earnedAt > $1.earnedAt },
-            achievements: AchievementID.allCases.map { storedByID[$0] ?? Achievement(id: $0) },
+            achievements: achievementList,
             totalSymbolCount: representatives.count,
             categories: byCategory
         )
     }
 
-    private func fillCount(_ name: String) -> Int {
-        name.split(separator: ".").filter { $0 == "fill" }.count
-    }
 }
 
 extension SymbolCategory {

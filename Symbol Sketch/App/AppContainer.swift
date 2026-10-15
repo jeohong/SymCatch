@@ -114,9 +114,12 @@ final class AppContainer {
         )
     }
 
-    /// 앱을 켤 때 한 번: 등급 기준이 바뀌기 전에 받은 뱃지의 등급을 최고 유사도에 맞춘다(올리기만 한다).
-    func reconcileBadgeTiers() async {
+    /// 앱을 켤 때 한 번: 기준이 바뀌기 전에 받은 기록을 지금 규칙에 맞춘다.
+    /// 1) 뱃지 등급을 최고 유사도에 맞춘다(올리기만). 2) 늘어난 업적을 지금 뱃지·통계로 다시 계산한다(조용히 달성).
+    func reconcileProgress() async {
         _ = try? await DefaultReconcileBadgeTiersUseCase(badges: badges).execute(now: .now)
+        _ = try? await DefaultReconcileAchievementsUseCase(achievements: achievements, badges: badges, stats: stats,
+                                                           catalog: symbolCatalog).execute(now: .now)
     }
 
     /// 심볼 인덱스 준비. 그리기 화면과 온보딩이 같은 준비를 함께 쓴다(앱에 하나).
@@ -154,7 +157,7 @@ final class AppContainer {
         DrawViewModel(
             indexPreparation: indexPreparation,
             searchSymbols: drawSearch,
-            selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
+            selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats, catalog: symbolCatalog),
             fetchRecent: DefaultFetchRecentRecordsUseCase(records: records),
             fetchBadges: DefaultFetchBadgesUseCase(badges: badges),
             navigator: navigator
@@ -186,7 +189,7 @@ final class AppContainer {
         OnboardingViewModel(
             indexPreparation: indexPreparation,
             searchSymbols: drawSearch,
-            selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats),
+            selectSymbol: DefaultSelectSymbolUseCase(records: records, badges: badges, achievements: achievements, stats: stats, catalog: symbolCatalog),
             navigator: navigator
         )
     }
