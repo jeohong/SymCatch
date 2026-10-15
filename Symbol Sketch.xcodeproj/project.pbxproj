@@ -187,11 +187,11 @@
 				};
 			};
 			buildConfigurationList = D4104E0A307AFFB600F0C18A /* Build configuration list for PBXProject "Symbol Sketch" */;
-			developmentRegion = ko;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				ko,
 				en,
+				ko,
 				Base,
 			);
 			mainGroup = D4104E06307AFFB600F0C18A;
