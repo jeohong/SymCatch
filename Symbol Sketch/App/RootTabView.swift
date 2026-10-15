@@ -20,8 +20,15 @@ struct RootTabView: View {
     @State private var searchViewModel: SymbolSearchViewModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    /// 넓은 창: 최근·콜렉션을 목록 + 상세 분할 화면으로(기획서 8A.1). 좁은 창은 iPhone과 같은 스택.
-    private var isSplit: Bool { horizontalSizeClass == .regular }
+    /// 앱 창이 가로로 긴지(회전·창 크기 변경 때 갱신)
+    @State private var isLandscapeWindow = false
+
+    /// 넓은 창(regular 너비)
+    private var isRegularWidth: Bool { horizontalSizeClass == .regular }
+
+    /// 최근·콜렉션을 목록 + 상세 분할 화면으로(기획서 8A.1): 넓고 가로로 긴 창만(iPad 가로, 펼친 Duo 가로).
+    /// 세로로 긴 창(iPad 세로, 펼친 Duo 세로)은 분할하면 상세가 좁고 목록이 옆에서 덮어 열리므로 iPhone처럼 스택으로 이동한다.
+    private var isSplit: Bool { isRegularWidth && isLandscapeWindow }
 
     /// 상위 화면(테마 전환 등)이 다시 그려질 때마다 init이 다시 불린다. 그래서 탭 ViewModel은 여기서 만들지 않고
     /// 컨테이너가 앱에 하나씩만 만들어 둔 것을 쓴다.
@@ -37,6 +44,7 @@ struct RootTabView: View {
 
     var body: some View {
         tabs
+        .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscapeWindow = $0 }
         .overlay {
             // 축하 모달(S4)은 탭 바까지 덮는다.
             if let celebration = router.celebration {
@@ -92,8 +100,8 @@ struct RootTabView: View {
     @ViewBuilder
     private var tabs: some View {
         if #available(iOS 26, *) {
-            searchRoleTabs(searchFieldInTabBar: !isSplit)
-                .tabViewSearchActivation(isSplit ? .automatic : .searchTabSelection)
+            searchRoleTabs(searchFieldInTabBar: !isRegularWidth)
+                .tabViewSearchActivation(isRegularWidth ? .automatic : .searchTabSelection)
         } else if #available(iOS 18, *) {
             searchRoleTabs(searchFieldInTabBar: false)
         } else {
