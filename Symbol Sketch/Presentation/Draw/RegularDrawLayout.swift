@@ -88,9 +88,14 @@ struct RegularDrawLayout: View {
 // MARK: - 결과 패널
 
 /// 넓은 창의 결과 패널(DESIGN_NOTES S1 regular): 머리글 · Top 10(1열 목록 또는 2열 격자) · 다시 그리기.
-private struct ResultPanel: View {
+/// iPhone 가로(`CompactLandscapeDrawLayout`)도 1열로 같이 쓴다.
+struct ResultPanel: View {
     @Bindable var viewModel: DrawViewModel
     let columns: Int
+    /// 하드웨어 키보드가 흔한 넓은 창에서만 "⌘C 이름 복사"를 보여 준다.
+    var showsShortcutHint = true
+    /// 결과 행 대신 작은 카드(`DuoResultCard`)로 보여 준다. 한 줄 행이 들어가지 않는 좁은 열(Duo 바깥 화면 가로)용.
+    var usesCards = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -116,10 +121,12 @@ private struct ResultPanel: View {
             Text("검색 결과").font(.title3.weight(.semibold)).foregroundStyle(DSColor.textPrimary)
             Text("Top 10 · 유사도순").font(.footnote).foregroundStyle(DSColor.textSecondary)
             Spacer(minLength: Spacing.s)
-            Text("⌘C 이름 복사")
-                .font(.footnote)
-                .foregroundStyle(DSColor.textSecondary)
-                .accessibilityHidden(true)
+            if showsShortcutHint {
+                Text("⌘C 이름 복사")
+                    .font(.footnote)
+                    .foregroundStyle(DSColor.textSecondary)
+                    .accessibilityHidden(true)
+            }
         }
         .padding(.top, Spacing.l)
         .padding(.horizontal, Spacing.l)
@@ -131,7 +138,13 @@ private struct ResultPanel: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.s), count: columns), spacing: Spacing.s) {
                 ForEach(Array(viewModel.matches.enumerated()), id: \.element.id) { index, match in
                     Button { viewModel.select(match) } label: {
-                        SymbolResultRow(rank: index + 1, match: match, badgeHint: viewModel.badgeHint(for: match))
+                        if usesCards {
+                            DuoResultCard(rank: index + 1, match: match, badgeHint: viewModel.badgeHint(for: match),
+                                          background: DSColor.cellElevated)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            SymbolResultRow(rank: index + 1, match: match, badgeHint: viewModel.badgeHint(for: match))
+                        }
                     }
                     .buttonStyle(.plain)
                 }

@@ -14,6 +14,8 @@ struct DuoResultCard: View {
     let rank: Int
     let match: SymbolMatch
     let badgeHint: BadgeHint
+    /// 카드 바탕. 같은 색 패널 안(iPhone 가로의 좁은 결과 열)에서는 `cellElevated`로 띄운다.
+    var background: Color = DSColor.bgSecondary
 
     @ScaledMetric(relativeTo: .title) private var glyphSize = Metrics.rowGlyph
 
@@ -49,7 +51,7 @@ struct DuoResultCard: View {
         .padding(.vertical, Spacing.s + 1)
         .padding(.horizontal, Spacing.s + Spacing.xxs)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(DSColor.bgSecondary, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
+        .background(background, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
         .overlay(
             RoundedRectangle(cornerRadius: Radius.toolGroup)
                 .strokeBorder(match.similarity >= BadgeTierPolicy.threshold ? DSColor.gold : .clear, lineWidth: 2)

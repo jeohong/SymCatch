@@ -85,11 +85,13 @@ private struct ToolButton: View {
 
 /// 찾기 버튼: 찾기 / 곧 찾아요(0.6초 채움) / 찾는 중 / 비활성.
 /// Duo 반쯤 접힘에서는 오른쪽 열 아래 전체 폭, 높이 50(DESIGN_NOTES 3.2).
+/// iPhone 가로에서는 세로 도구 열 맨 아래에 아이콘만 있는 정사각형(`iconOnly`).
 struct FindButton: View {
     let phase: DrawViewModel.Phase
     let isEnabled: Bool
     var height: CGFloat = Metrics.primaryButtonHeight
     var fillsWidth = false
+    var iconOnly = false
     let action: () -> Void
 
     @State private var pendingFill: CGFloat = 0
@@ -103,12 +105,14 @@ struct FindButton: View {
                 } else {
                     Image(systemName: "magnifyingglass")
                 }
-                Text(title)
+                if !iconOnly {
+                    Text(title)
+                }
             }
             .font(.headline)
-            .padding(.leading, Spacing.l)
-            .padding(.trailing, Spacing.l + Spacing.xs)
-            .frame(minWidth: 104, maxWidth: fillsWidth ? .infinity : nil, minHeight: height)
+            .padding(.leading, iconOnly ? 0 : Spacing.l)
+            .padding(.trailing, iconOnly ? 0 : Spacing.l + Spacing.xs)
+            .frame(minWidth: iconOnly ? height : 104, maxWidth: fillsWidth ? .infinity : nil, minHeight: height)
             .foregroundStyle(isEnabled ? DSColor.onAccent : DSColor.textSecondary)
             .background(alignment: .leading) {
                 ZStack(alignment: .leading) {
@@ -125,6 +129,7 @@ struct FindButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+        .accessibilityLabel(Text(title))
         .accessibilityShowsLargeContentViewer {
             Label(title, systemImage: "magnifyingglass")
         }

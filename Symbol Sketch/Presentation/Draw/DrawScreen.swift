@@ -9,7 +9,7 @@ import SwiftUI
 import Domain
 
 /// 그리기 화면(S1) + 결과(S2). 배치는 `DrawLayoutResolver`가 고른다(CLAUDE.md 4장).
-/// compact(일반 iPhone, 좁은 창) · Duo 반쯤 접힘(M4) · iPad 넓은 창 가로·세로(M4.5).
+/// compact(일반 iPhone, 좁은 창) · iPhone 가로(결정 23) · Duo 반쯤 접힘(M4) · iPad 넓은 창 가로·세로(M4.5).
 struct DrawScreen: View {
     @Bindable var viewModel: DrawViewModel
     @State private var canvas = SketchCanvasController()
@@ -27,7 +27,7 @@ struct DrawScreen: View {
             let layout = DrawLayoutResolver.resolve(
                 size: proxy.size,
                 horizontalSizeClass: horizontalSizeClass,
-                fold: FoldRegionReader.horizontalFold(in: proxy)
+                fold: FoldRegionReader.activeFold(in: proxy)
             )
             switch layout {
             case .duoHalfFolded(let top, let bottom):
@@ -36,6 +36,8 @@ struct DrawScreen: View {
                 RegularDrawLayout(viewModel: viewModel, canvas: canvas, arrangement: .landscape, size: proxy.size)
             case .regularPortrait:
                 RegularDrawLayout(viewModel: viewModel, canvas: canvas, arrangement: .portrait, size: proxy.size)
+            case .compactLandscape:
+                CompactLandscapeDrawLayout(viewModel: viewModel, canvas: canvas, size: proxy.size)
             case .compact:
                 compactLayout(proxy)
             }
