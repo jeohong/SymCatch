@@ -11,6 +11,8 @@ import Domain
 /// 홈 상단 최근 찾은 심볼 5개(DESIGN_NOTES 3.3). 기록이 없으면 부르는 쪽에서 숨긴다.
 struct RecentStrip: View {
     let records: [FoundRecord]
+    /// 좌우 여백(화면 가장자리면 16, iPad 캔버스 열 안이면 0)
+    var leadingInset: CGFloat = Spacing.screen
     let onSelect: (FoundRecord) -> Void
 
     var body: some View {
@@ -18,14 +20,14 @@ struct RecentStrip: View {
             Text("최근")
                 .font(DSFont.sectionHeader)
                 .foregroundStyle(DSColor.textSecondary)
-                .padding(.leading, Spacing.screen)
+                .padding(.leading, leadingInset)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.s) {
                     ForEach(records) { record in
                         RecentChip(record: record) { onSelect(record) }
                     }
                 }
-                .padding(.trailing, Spacing.screen)
+                .padding(.trailing, leadingInset)
             }
         }
         .frame(minHeight: Metrics.minTapTarget)

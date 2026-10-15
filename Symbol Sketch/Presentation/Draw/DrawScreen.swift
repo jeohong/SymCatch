@@ -9,7 +9,7 @@ import SwiftUI
 import Domain
 
 /// 그리기 화면(S1) + 결과(S2). 배치는 `DrawLayoutResolver`가 고른다(CLAUDE.md 4장).
-/// compact(일반 iPhone) · Duo 반쯤 접힘(M4). iPad regular 배치는 M4.5.
+/// compact(일반 iPhone, 좁은 창) · Duo 반쯤 접힘(M4) · iPad 넓은 창 가로·세로(M4.5).
 struct DrawScreen: View {
     @Bindable var viewModel: DrawViewModel
     @State private var canvas = SketchCanvasController()
@@ -32,12 +32,25 @@ struct DrawScreen: View {
             switch layout {
             case .duoHalfFolded(let top, let bottom):
                 DuoHalfFoldedDrawLayout(viewModel: viewModel, canvas: canvas, top: top, bottom: bottom)
-            case .compact, .regularLandscape, .regularPortrait:
-                // iPad regular 배치(가로·세로)는 M4.5에서 만든다. 그때까지는 compact 배치.
+            case .regularLandscape:
+                RegularDrawLayout(viewModel: viewModel, canvas: canvas, arrangement: .landscape, size: proxy.size)
+            case .regularPortrait:
+                RegularDrawLayout(viewModel: viewModel, canvas: canvas, arrangement: .portrait, size: proxy.size)
+            case .compact:
                 compactLayout(proxy)
             }
         }
         .background(DSColor.bgPrimary)
+        .background {
+            // ⌘C: 1위 결과 이름 복사. 보이지 않는 버튼으로 단축키만 건다(⌘ 길게 누르면 목록에 보인다).
+            Button("1위 이름 복사") { viewModel.copyTopResultName() }
+                .keyboardShortcut("c", modifiers: .command)
+                .disabled(!viewModel.showsMatches)
+                .opacity(0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .toast($viewModel.toast)
         .navigationTitle("그리기")  // 상세 화면의 뒤로 버튼 이름
         .toolbar(.hidden, for: .navigationBar)
         .task { await viewModel.start() }
