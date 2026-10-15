@@ -86,7 +86,7 @@ final class EvaluationRunViewModel {
     var exportText: String {
         guard let run, !comparison.isEmpty else { return "평가 그림이 부족해 보정값을 계산하지 못했습니다." }
         var lines = [
-            "# Symbol Sketch 보정 평가",
+            "# SymCatch 보정 평가",
             "",
             "- 엔진: `\(run.engineID)`",
             "- sHigh 분위: \(Self.percentText(highPercentile)) · 뱃지 기준 \(BadgeTierPolicy.threshold)%",
