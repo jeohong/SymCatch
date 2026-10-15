@@ -29,7 +29,9 @@ struct RegularDrawLayout: View {
             switch arrangement {
             case .landscape:
                 HStack(alignment: .top, spacing: Spacing.l + Spacing.xs) {
+                    // 그리기 열은 남는 높이의 세로 가운데(펼친 Duo 가로처럼 높이가 남을 때), 결과 패널은 전체 높이
                     canvasColumn
+                        .frame(maxHeight: .infinity)
                     ResultPanel(viewModel: viewModel, columns: 1)
                 }
             case .portrait:
