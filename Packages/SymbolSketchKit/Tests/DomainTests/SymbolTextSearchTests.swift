@@ -50,6 +50,48 @@ struct SymbolTextSearchTests {
     }
 }
 
+struct KoreanSymbolSearchTests {
+    private let symbols = [
+        meta("heart"), meta("heart.fill"), meta("heart.circle"), meta("suit.heart"),
+        meta("car", categories: ["transportation"]), meta("car.side", categories: ["transportation"]),
+        meta("bicycle", categories: ["transportation"]),
+        SymbolMeta(name: "cross.case", family: "cross.case", categories: ["health"], keywords: ["first aid", "heart care"], minOS: "13.0"),
+        meta("leaf", categories: ["nature"]),
+    ]
+    private let dictionary = KoreanSymbolDictionary(
+        words: ["heart": ["하트", "심장"], "car": ["자동차", "차"], "suit": ["카드 무늬"], "circle": ["원", "동그라미"], "case": ["케이스"]],
+        categories: ["nature": ["자연"], "transportation": ["교통"]]
+    )
+
+    @Test func 한글이_있으면_한국어_검색() {
+        #expect(KoreanSymbolDictionary.containsHangul("하트"))
+        #expect(KoreanSymbolDictionary.containsHangul("ㅎㅌ"))
+        #expect(!KoreanSymbolDictionary.containsHangul("heart"))
+    }
+
+    @Test func 뜻이_같은_단어가_이름_앞에_있을수록_위() {
+        let result = SymbolTextSearch.search(symbols, query: "하트", dictionary: dictionary).map(\.symbol.name)
+        // 이름 전체 → 맨 앞 → 중간 → 키워드만
+        #expect(result == ["heart", "heart.circle", "suit.heart", "cross.case"])
+    }
+
+    @Test func 뜻이_검색어로_시작만_해도_찾는다() {
+        // "자동"은 "자동차"의 앞부분
+        #expect(SymbolTextSearch.search(symbols, query: "자동", dictionary: dictionary).map(\.symbol.name) == ["car", "car.side"])
+    }
+
+    @Test func 카테고리_이름만_맞으면_맨_뒤() {
+        let result = SymbolTextSearch.search(symbols, query: "교통", dictionary: dictionary).map(\.symbol.name)
+        #expect(Set(result) == ["car", "car.side", "bicycle"])
+        #expect(SymbolTextSearch.search(symbols, query: "자연", dictionary: dictionary).map(\.symbol.name) == ["leaf"])
+    }
+
+    @Test func 사전이_없으면_한국어는_결과가_없고_영어는_그대로() {
+        #expect(SymbolTextSearch.search(symbols, query: "하트").isEmpty)
+        #expect(SymbolTextSearch.search(symbols, query: "heart", dictionary: dictionary).first?.symbol.name == "heart")
+    }
+}
+
 struct BrowseSymbolsUseCaseTests {
     private let catalog = ListCatalog(
         symbols: [meta("heart", categories: ["health"]), meta("heart.fill", categories: ["health"]),

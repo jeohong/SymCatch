@@ -35,6 +35,8 @@ public enum SymbolTextSearch {
         case contains
         /// 이름에는 없고 키워드에만 있음
         case keyword
+        /// 카테고리 한국어 이름만 맞음(한국어 검색)
+        case category
 
         public static func < (lhs: Rank, rhs: Rank) -> Bool { lhs.rawValue < rhs.rawValue }
     }
@@ -56,13 +58,40 @@ public enum SymbolTextSearch {
         return nil
     }
 
+    /// 한국어 검색(결정 22): 사전에서 검색어에 맞는 영어 단어를 고르고, 그 단어가 이름에 있는 심볼을 찾는다.
+    /// 뜻이 검색어와 같은 단어가 이름 전체면 exact, 맨 앞이면 prefix, 중간이면 componentPrefix,
+    /// 뜻이 검색어로 시작·포함만 하면 contains. 이름에 없고 키워드에 있으면 keyword, 카테고리 이름만 맞으면 category.
+    static func koreanRank(_ symbol: SymbolMeta, words: [String: KoreanSymbolDictionary.Match], categories: Set<String>) -> Rank? {
+        let parts = symbol.name.lowercased().split(separator: ".").map(String.init).filter { $0 != "fill" }
+        let best = parts.enumerated().compactMap { index, part -> Rank? in
+            guard let match = words[part] else { return nil }
+            guard match == .exact else { return .contains }
+            if parts.count == 1 { return .exact }
+            return index == 0 ? .prefix : .componentPrefix
+        }.min()
+        if let best { return best }
+        let keywordWords = symbol.keywords.flatMap { $0.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init) }
+        if keywordWords.contains(where: { words[$0] != nil }) { return .keyword }
+        if !categories.isDisjoint(with: symbol.categories) { return .category }
+        return nil
+    }
+
     /// 검색: family마다 변형 중 가장 좋은 순위로 묶어 대표 한 칸만 남긴다.
+    /// 검색어에 한글이 있으면 한국어 사전으로, 아니면 영어 이름·키워드로 찾는다.
     /// 정렬 = 순위 → 대표 이름 길이(짧은 것 먼저) → 이름순.
-    public static func search(_ symbols: [SymbolMeta], query: String) -> [SymbolBrowseItem] {
+    public static func search(_ symbols: [SymbolMeta], query: String, dictionary: KoreanSymbolDictionary = .empty) -> [SymbolBrowseItem] {
         guard let query = normalize(query) else { return [] }
+        let ranker: (SymbolMeta) -> Rank?
+        if KoreanSymbolDictionary.containsHangul(query) {
+            let words = dictionary.matchingWords(query)
+            let categories = dictionary.matchingCategories(query)
+            ranker = { koreanRank($0, words: words, categories: categories) }
+        } else {
+            ranker = { rank($0, query: query) }
+        }
         let families = Dictionary(grouping: symbols, by: \.family)
         let ranked: [(item: SymbolBrowseItem, rank: Rank)] = families.values.compactMap { members in
-            guard let best = members.compactMap({ rank($0, query: query) }).min(),
+            guard let best = members.compactMap(ranker).min(),
                   let representative = VariantGrouper.representatives(of: members).first else { return nil }
             return (SymbolBrowseItem(symbol: representative, variantCount: members.count), best)
         }

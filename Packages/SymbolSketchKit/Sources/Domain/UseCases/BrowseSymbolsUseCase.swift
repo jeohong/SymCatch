@@ -28,11 +28,18 @@ public protocol BrowseSymbolsUseCase: Sendable {
     func execute(query: String, category: String?) async throws -> [SymbolBrowseItem]
 }
 
+/// 한국어 검색 사전을 읽는 저장소(기기 안 파일)
+public protocol KoreanDictionaryRepository: Sendable {
+    func dictionary() async throws -> KoreanSymbolDictionary
+}
+
 public struct DefaultBrowseSymbolsUseCase: BrowseSymbolsUseCase {
     private let catalog: any SymbolCatalogRepository
+    private let dictionary: (any KoreanDictionaryRepository)?
 
-    public init(catalog: any SymbolCatalogRepository) {
+    public init(catalog: any SymbolCatalogRepository, dictionary: (any KoreanDictionaryRepository)? = nil) {
         self.catalog = catalog
+        self.dictionary = dictionary
     }
 
     public func categories() async throws -> [SymbolCategorySummary] {
@@ -54,7 +61,9 @@ public struct DefaultBrowseSymbolsUseCase: BrowseSymbolsUseCase {
             symbols = all
         }
         if SymbolTextSearch.normalize(query) != nil {
-            return SymbolTextSearch.search(symbols, query: query)
+            // 사전을 못 읽어도 영어 검색은 된다.
+            let korean = (try? await dictionary?.dictionary()) ?? .empty
+            return SymbolTextSearch.search(symbols, query: query, dictionary: korean)
         }
         guard let category else { return [] }
         return SymbolTextSearch.browse(symbols, category: category)
