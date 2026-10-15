@@ -47,7 +47,6 @@ struct SettingsScreen: View {
             Section("앱 정보") {
                 LabeledContent("버전", value: viewModel.appVersion)
                 LabeledContent("인식 방식", value: String(localized: "기기 내 처리"))
-                LabeledContent("광고·결제·계정", value: String(localized: "없음"))
             }
         }
         .scrollContentBackground(.hidden)

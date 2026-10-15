@@ -916,22 +916,6 @@
         }
       }
     },
-    "광고·결제·계정" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ads · Payments · Accounts"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "광고·결제·계정"
-          }
-        }
-      }
-    },
     "교통" : {
       "localizations" : {
         "en" : {
