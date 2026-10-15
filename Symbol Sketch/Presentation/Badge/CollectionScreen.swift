@@ -8,9 +8,11 @@
 import SwiftUI
 import Domain
 
-/// 콜렉션(S6). iPad·Duo 분할 화면은 M4.5에서 `NavigationSplitView`로 바꾼다.
+/// 콜렉션(S6). 넓은 창에서는 분할 화면 왼쪽이 되고, 오른쪽에 고른 뱃지 상세(S7)나 설정(S8)이 뜬다(RootTabView).
 struct CollectionScreen: View {
     @Bindable var viewModel: CollectionViewModel
+    /// 분할 화면에서 오른쪽에 보이는 뱃지(메달 외곽선). 좁은 창은 nil.
+    var selectedBadgeName: String?
 
     var body: some View {
         content
@@ -52,7 +54,7 @@ struct CollectionScreen: View {
                     }
                     achievements(summary.achievements)
                     ForEach(summary.categories, id: \.category.key) { category in
-                        CategorySection(category: category, viewModel: viewModel)
+                        CategorySection(category: category, viewModel: viewModel, selectedName: selectedBadgeName)
                     }
                 }
                 .padding(.vertical, Spacing.m)
@@ -205,6 +207,7 @@ private struct AchievementCard: View {
 private struct CategorySection: View {
     let category: CategorySymbols
     let viewModel: CollectionViewModel
+    let selectedName: String?
     @State private var peekName: String?
 
     var body: some View {
@@ -222,7 +225,7 @@ private struct CategorySection: View {
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 56), spacing: Spacing.m)], spacing: Spacing.m) {
                 ForEach(category.names, id: \.self) { name in
-                    MedalCell(name: name, badge: viewModel.badge(for: name), isPeeking: peekName == name,
+                    MedalCell(name: name, badge: viewModel.badge(for: name), isPeeking: peekName == name, isSelected: name == selectedName,
                               onTap: { viewModel.select(symbolName: name) },
                               onPeek: { peekName = name })
                         .zIndex(peekName == name ? 1 : 0)
@@ -246,11 +249,14 @@ private struct MedalCell: View {
     let name: String
     let badge: SymbolBadge?
     let isPeeking: Bool
+    var isSelected = false
     let onTap: () -> Void
     let onPeek: () -> Void
 
     var body: some View {
         BadgeView(systemImage: name, style: badge.map { .tier($0.tier) } ?? .locked, size: 56)
+            // 분할 화면에서 오른쪽에 보이는 메달(DESIGN_NOTES S6: accent 2px 외곽선)
+            .overlay(Circle().strokeBorder(isSelected ? DSColor.accent : .clear, lineWidth: 2).padding(-4))
             .frame(maxWidth: .infinity)
             .contentShape(Circle())
             .onTapGesture(perform: onTap)
@@ -261,7 +267,7 @@ private struct MedalCell: View {
             .animation(.easeOut(duration: 0.18), value: isPeeking)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(badge.map { String(localized: "\(name), \($0.tier.displayName) 뱃지") } ?? String(localized: "\(name), 미획득"))
-            .accessibilityAddTraits(.isButton)
+            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
             .accessibilityAction { onTap() }
     }
 

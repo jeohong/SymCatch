@@ -8,9 +8,11 @@
 import SwiftUI
 import Domain
 
-/// 최근 찾은 심볼(S5). iPad·Duo 분할 화면은 M4.5에서 `NavigationSplitView`로 바꾼다.
+/// 최근 찾은 심볼(S5). 넓은 창에서는 분할 화면 왼쪽 목록이 되고, 오른쪽에 고른 기록의 상세가 뜬다(RootTabView).
 struct RecentScreen: View {
     @Bindable var viewModel: RecentViewModel
+    /// 분할 화면에서 오른쪽에 보이는 기록(행 강조). 좁은 창은 nil.
+    var selectedSymbolName: String?
 
     var body: some View {
         content
@@ -82,7 +84,7 @@ struct RecentScreen: View {
                         .buttonStyle(.plain)
                         // 행 안쪽 여백(위아래 10)은 RecentRow가 갖는다. List 기본 여백은 쓰지 않는다.
                         .listRowInsets(EdgeInsets(top: 0, leading: Spacing.screen, bottom: 0, trailing: Spacing.screen))
-                        .listRowBackground(DSColor.bgPrimary)
+                        .listRowBackground(record.symbolName == selectedSymbolName ? DSColor.bgTertiary : DSColor.bgPrimary)
                         .listRowSeparatorTint(DSColor.separator)
                         .alignmentGuide(.listRowSeparatorLeading) { _ in Metrics.rowTile + Spacing.m }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {

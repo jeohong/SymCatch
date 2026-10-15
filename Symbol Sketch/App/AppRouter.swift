@@ -20,6 +20,14 @@ final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, S
     var drawPath: [DrawRoute] = []
     var recentPath: [RecentRoute] = []
     var collectionPath: [CollectionRoute] = []
+    /// 넓은 창(regular)에서 최근·콜렉션을 분할 화면(목록 + 상세)으로 보여 주는지(기획서 8A.1).
+    /// RootTabView가 크기 클래스로 정한다. 좁은 창은 지금처럼 경로에 쌓는다.
+    var isSplitLayout = false
+    /// 분할 화면 오른쪽에 보여 줄 최근 기록 상세(S3)
+    var recentSelection: SymbolDetailRequest?
+    /// 분할 화면 오른쪽에 보여 줄 콜렉션 상세(S7 또는 S8)와 그 안에서 이어지는 경로
+    var collectionSelection: CollectionRoute?
+    var collectionDetailPath: [CollectionRoute] = []
     /// 그리기 화면에 넘길 도전 목표(그리기 화면이 받아 가면 비운다)
     var pendingChallenge: String?
     /// 설정에서 "심볼 다시 준비하기"를 누름(그리기 화면이 받아 가면 비운다)
@@ -51,7 +59,11 @@ final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, S
     }
 
     func showRecentDetail(_ request: SymbolDetailRequest) {
-        recentPath.append(.symbolDetail(request))
+        if isSplitLayout {
+            recentSelection = request
+        } else {
+            recentPath.append(.symbolDetail(request))
+        }
     }
 
     func showDrawTab() {
@@ -59,15 +71,29 @@ final class AppRouter: DrawNavigating, RecentNavigating, CollectionNavigating, S
     }
 
     func showBadgeDetail(symbolName: String) {
-        collectionPath.append(.badgeDetail(symbolName: symbolName))
+        showCollectionDetail(.badgeDetail(symbolName: symbolName))
     }
 
     func showCollectionSymbolDetail(_ request: SymbolDetailRequest) {
-        collectionPath.append(.symbolDetail(request))
+        if isSplitLayout {
+            collectionDetailPath.append(.symbolDetail(request))
+        } else {
+            collectionPath.append(.symbolDetail(request))
+        }
     }
 
     func showSettings() {
-        collectionPath.append(.settings)
+        showCollectionDetail(.settings)
+    }
+
+    /// 분할 화면이면 오른쪽 상세를 바꾸고(이어진 경로는 비움), 아니면 경로에 쌓는다.
+    private func showCollectionDetail(_ route: CollectionRoute) {
+        if isSplitLayout {
+            collectionSelection = route
+            collectionDetailPath = []
+        } else {
+            collectionPath.append(route)
+        }
     }
 
     func rebuildSymbolIndex() {
