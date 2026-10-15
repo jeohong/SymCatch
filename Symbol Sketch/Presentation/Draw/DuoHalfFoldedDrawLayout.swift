@@ -43,7 +43,7 @@ private struct ResultsPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             header
-            if DrawStatusView.showsMatches(of: viewModel) {
+            if viewModel.showsMatches {
                 grid
             } else {
                 DrawStatusView(viewModel: viewModel)

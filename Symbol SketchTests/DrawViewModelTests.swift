@@ -99,6 +99,12 @@ private final class MutableBadges: FetchBadgesUseCase, @unchecked Sendable {
 }
 
 @MainActor
+private final class SpyPasteboard: PasteboardClient {
+    var copied: [String] = []
+    func copy(_ text: String) { copied.append(text) }
+}
+
+@MainActor
 private final class SpyNavigator: DrawNavigating {
     var shown: [SymbolDetailRequest] = []
     var celebrations: [Celebration] = []
@@ -120,10 +126,11 @@ struct DrawViewModelTests {
         select: StubSelect = StubSelect(),
         recent: StubRecent = StubRecent(),
         badges: StubBadges = StubBadges(),
+        pasteboard: SpyPasteboard = SpyPasteboard(),
         skeletonDelay: Duration = .milliseconds(300)
     ) -> DrawViewModel {
         DrawViewModel(prepareIndex: StubPrepare(ready: ready), searchSymbols: search, selectSymbol: select,
-                      fetchRecent: recent, fetchBadges: badges, navigator: navigator,
+                      fetchRecent: recent, fetchBadges: badges, pasteboard: pasteboard, navigator: navigator,
                       now: { Date(timeIntervalSince1970: 1_791_720_000) }, debounce: .zero, skeletonDelay: skeletonDelay)
     }
 
@@ -196,6 +203,32 @@ struct DrawViewModelTests {
         #expect(viewModel.phase == .idle)
         #expect(viewModel.matches.count == 12)
         #expect(viewModel.previewMatches.map(\.name) == ["s1", "s2", "s3"])
+    }
+
+    @Test func 단축키_복사는_1위_이름을_복사하고_알린다() async {
+        let pasteboard = SpyPasteboard()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .results(results)), pasteboard: pasteboard)
+        await viewModel.start()
+        viewModel.sketchDidChange(drawn)
+        await viewModel.pendingSearch?.value
+
+        viewModel.copyTopResultName()
+
+        #expect(pasteboard.copied == ["s1"])
+        #expect(viewModel.toast?.text == "복사했어요")
+    }
+
+    @Test func 결과가_없으면_단축키_복사는_아무것도_하지_않는다() async {
+        let pasteboard = SpyPasteboard()
+        let viewModel = makeViewModel(search: StubSearch(outcome: .tooSmall), pasteboard: pasteboard)
+        await viewModel.start()
+        viewModel.sketchDidChange(drawn)
+        await viewModel.pendingSearch?.value
+
+        viewModel.copyTopResultName()
+
+        #expect(pasteboard.copied.isEmpty)
+        #expect(viewModel.toast == nil)
     }
 
     @Test func 그림이_부족하면_안내한다() async {

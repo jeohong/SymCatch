@@ -75,7 +75,7 @@ struct ResultSheet: View {
 
     @ViewBuilder
     private var content: some View {
-        if DrawStatusView.showsMatches(of: viewModel) {
+        if viewModel.showsMatches {
             if viewModel.isSheetExpanded { expandedList } else { topThree }
         } else {
             DrawStatusView(viewModel: viewModel)

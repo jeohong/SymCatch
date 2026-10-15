@@ -13,15 +13,6 @@ import Domain
 struct DrawStatusView: View {
     let viewModel: DrawViewModel
 
-    /// 상태 표시 대신 결과 목록을 보여 줄 때인지
-    static func showsMatches(of viewModel: DrawViewModel) -> Bool {
-        guard viewModel.preparation == .ready, !viewModel.matches.isEmpty else { return false }
-        switch viewModel.phase {
-        case .tooSmall, .failed: return false
-        default: return true
-        }
-    }
-
     var body: some View {
         switch viewModel.preparation {
         case .checking, .preparing:

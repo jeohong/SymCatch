@@ -38,10 +38,14 @@ struct SketchToolGroup: View {
             ? AnyLayout(HStackLayout(spacing: 0))
             : AnyLayout(VStackLayout(spacing: Spacing.xs))
         layout {
-            ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", size: buttonSize, isEnabled: canvas.canUndo) { canvas.undo() }
-            ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", size: buttonSize, isEnabled: canvas.canRedo) { canvas.redo() }
+            // 키보드 단축키(기획서 8A.3-4): ⌘Z 되돌리기 · ⇧⌘Z 다시 하기 · ⌘⌫ 전체 지우기
+            ToolButton(title: "되돌리기", systemImage: "arrow.uturn.backward", size: buttonSize, isEnabled: canvas.canUndo,
+                       shortcut: KeyboardShortcut("z", modifiers: .command)) { canvas.undo() }
+            ToolButton(title: "다시 하기", systemImage: "arrow.uturn.forward", size: buttonSize, isEnabled: canvas.canRedo,
+                       shortcut: KeyboardShortcut("z", modifiers: [.command, .shift])) { canvas.redo() }
             ToolButton(title: "지우개", systemImage: "eraser", size: buttonSize, isOn: canvas.tool == .eraser) { canvas.toggleTool() }
-            ToolButton(title: "전체 지우기", systemImage: "trash", size: buttonSize, isEnabled: !canvas.isEmpty) { canvas.clear() }
+            ToolButton(title: "전체 지우기", systemImage: "trash", size: buttonSize, isEnabled: !canvas.isEmpty,
+                       shortcut: KeyboardShortcut(.delete, modifiers: .command)) { canvas.clear() }
         }
         .padding(axis == .horizontal ? Spacing.xxs : 0)
         .background(axis == .horizontal ? DSColor.bgSecondary : .clear, in: RoundedRectangle(cornerRadius: Radius.toolGroup))
@@ -55,6 +59,7 @@ private struct ToolButton: View {
     var size: CGFloat = Metrics.toolButton
     var isEnabled = true
     var isOn = false
+    var shortcut: KeyboardShortcut?
     let action: () -> Void
 
     var body: some View {
@@ -70,6 +75,7 @@ private struct ToolButton: View {
                 .contentShape(RoundedRectangle(cornerRadius: Radius.button))
         }
         .buttonStyle(.plain)
+        .keyboardShortcut(shortcut)
         .accessibilityShowsLargeContentViewer()
         .disabled(!isEnabled)
         .accessibilityAddTraits(isOn ? .isSelected : [])

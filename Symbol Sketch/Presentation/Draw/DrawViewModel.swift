@@ -48,6 +48,8 @@ final class DrawViewModel {
     private(set) var badges: [String: SymbolBadge] = [:]
     /// 도전 모드 목표 심볼(S7 "더 높은 등급에 도전"). 최근 스트립 자리에 목표 카드를 띄운다.
     private(set) var challengeTarget: String?
+    /// ⌘C 복사 안내
+    var toast: ToastMessage?
 
     /// 진행 중인 자동 검색(테스트에서 끝나기를 기다릴 때 쓴다)
     private(set) var pendingSearch: Task<Void, Never>?
@@ -58,6 +60,7 @@ final class DrawViewModel {
     private let selectSymbol: any SelectSymbolUseCase
     private let fetchRecent: any FetchRecentRecordsUseCase
     private let fetchBadges: any FetchBadgesUseCase
+    private let pasteboard: any PasteboardClient
     private weak var navigator: (any DrawNavigating)?
     private let now: () -> Date
     private let debounce: Duration
@@ -74,13 +77,14 @@ final class DrawViewModel {
         selectSymbol: any SelectSymbolUseCase,
         fetchRecent: any FetchRecentRecordsUseCase,
         fetchBadges: any FetchBadgesUseCase,
+        pasteboard: any PasteboardClient = SystemPasteboard(),
         navigator: (any DrawNavigating)?,
         now: @escaping () -> Date = Date.init,
         debounce: Duration = .milliseconds(600),
         skeletonDelay: Duration = .milliseconds(300)
     ) {
         self.init(indexPreparation: SymbolIndexPreparation(prepareIndex: prepareIndex), searchSymbols: searchSymbols,
-                  selectSymbol: selectSymbol, fetchRecent: fetchRecent, fetchBadges: fetchBadges, navigator: navigator,
+                  selectSymbol: selectSymbol, fetchRecent: fetchRecent, fetchBadges: fetchBadges, pasteboard: pasteboard, navigator: navigator,
                   now: now, debounce: debounce, skeletonDelay: skeletonDelay)
     }
 
@@ -90,6 +94,7 @@ final class DrawViewModel {
         selectSymbol: any SelectSymbolUseCase,
         fetchRecent: any FetchRecentRecordsUseCase,
         fetchBadges: any FetchBadgesUseCase,
+        pasteboard: any PasteboardClient = SystemPasteboard(),
         navigator: (any DrawNavigating)?,
         now: @escaping () -> Date = Date.init,
         debounce: Duration = .milliseconds(600),
@@ -100,6 +105,7 @@ final class DrawViewModel {
         self.selectSymbol = selectSymbol
         self.fetchRecent = fetchRecent
         self.fetchBadges = fetchBadges
+        self.pasteboard = pasteboard
         self.navigator = navigator
         self.now = now
         self.debounce = debounce
@@ -262,6 +268,22 @@ final class DrawViewModel {
                 challengeTarget = nil
             }
         }
+    }
+
+    /// 상태(준비 중·그림 부족·오류) 대신 결과 목록을 보여 줄 때인지
+    var showsMatches: Bool {
+        guard preparation == .ready, !matches.isEmpty else { return false }
+        switch phase {
+        case .tooSmall, .failed: return false
+        default: return true
+        }
+    }
+
+    /// ⌘C: 지금 결과의 1위 심볼 이름을 복사한다(기획서 8A.3-4, 계획서 7장 결정 19).
+    func copyTopResultName() {
+        guard showsMatches, let name = matches.first?.name else { return }
+        pasteboard.copy(name)
+        toast = ToastMessage(text: String(localized: "복사했어요"))
     }
 
     /// "다시 그리기": 캔버스를 비우고 시트를 접는다.
