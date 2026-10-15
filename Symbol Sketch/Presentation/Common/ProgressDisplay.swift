@@ -44,7 +44,7 @@ extension AchievementID {
         case .collector10: String(localized: "심볼 뱃지 10개 획득")
         case .collector50: String(localized: "심볼 뱃지 50개 획득")
         case .collector100: String(localized: "심볼 뱃지 100개 획득")
-        case .oneStroke: String(localized: "한 획으로 그려서 \(BadgeTierPolicy.threshold)% 이상")
+        case .oneStroke: String(localized: "한 획으로 그려서 \(BadgeTierPolicy.threshold.percentText) 이상")
         case .goldHand: String(localized: "골드 이상 뱃지 5개 획득")
         case .streak7: String(localized: "7일 연속으로 그려서 찾기")
         case .categoryStarter(let key):

@@ -294,7 +294,7 @@ private struct CompareSection: View {
 
             if let similarity = viewModel.request.similarity {
                 VStack(alignment: .leading, spacing: Spacing.s) {
-                    Text("\(similarity)%")
+                    Text(similarity.percentText)
                         .font(DSFont.similarityLarge)
                         .foregroundStyle(DSColor.textPrimary)
                     SimilarityBar(percent: similarity, height: 6)

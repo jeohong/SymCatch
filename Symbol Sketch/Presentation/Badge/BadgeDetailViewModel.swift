@@ -35,13 +35,13 @@ final class BadgeDetailViewModel {
     /// 다음 등급 안내
     var goalText: String {
         guard let tier = badge?.tier else {
-            return String(localized: "유사도 \(BadgeTier.bronze.minimumSimilarity)% 이상이면 브론즈 뱃지를 얻어요")
+            return String(localized: "유사도 \(BadgeTier.bronze.minimumSimilarity.percentText) 이상이면 브론즈 뱃지를 얻어요")
         }
         guard let next = tier.next else { return String(localized: "최고 등급을 달성했어요") }
         if next.minimumSimilarity >= 100 {
-            return String(localized: "\(next.minimumSimilarity)%를 달성하면 \(next.displayName)로 승급해요")
+            return String(localized: "\(next.minimumSimilarity.percentText)를 달성하면 \(next.displayName)로 승급해요")
         }
-        return String(localized: "\(next.minimumSimilarity)% 이상이면 \(next.displayName)로 승급해요")
+        return String(localized: "\(next.minimumSimilarity.percentText) 이상이면 \(next.displayName)로 승급해요")
     }
 
     /// 최고 등급(레전더리)이면 더 도전할 등급이 없다.

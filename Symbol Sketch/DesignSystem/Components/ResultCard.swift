@@ -41,7 +41,7 @@ struct ResultCard: View {
                 .foregroundStyle(DSColor.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Text("\(match.similarity)%")
+            Text(match.similarity.percentText)
                 .font(DSFont.similarity)
                 .foregroundStyle(DSColor.textPrimary)
             SimilarityBar(percent: match.similarity)

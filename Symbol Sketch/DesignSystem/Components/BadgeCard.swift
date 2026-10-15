@@ -44,7 +44,7 @@ struct BadgeCard: View {
                 layout {
                     HStack(alignment: .firstTextBaseline) {
                         Text("유사도").font(.subheadline).foregroundStyle(DSColor.textSecondary)
-                        Text("\(similarity)%").font(DSFont.similarity).foregroundStyle(DSColor.textPrimary)
+                        Text(similarity.percentText).font(DSFont.similarity).foregroundStyle(DSColor.textPrimary)
                     }
                     if !isLargeText { Spacer(minLength: Spacing.s) }
                     Text("\(tier.displayName) · \(ProgressDateFormat.day(date))")

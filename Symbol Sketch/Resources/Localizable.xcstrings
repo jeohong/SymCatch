@@ -97,6 +97,22 @@
         }
       }
     },
+    "%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
@@ -109,6 +125,25 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ 기준(sHigh)" : {
+      "shouldTranslate" : false
+    },
+    "%@ 넘으면 뱃지" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badges from %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 넘으면 뱃지"
           }
         }
       }
@@ -209,18 +244,18 @@
         }
       }
     },
-    "%@ 뱃지 보유 · 최고 %lld%%" : {
+    "%@ 뱃지 보유 · 최고 %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ badge owned · Best %2$lld%%"
+            "value" : "%1$@ badge owned · Best %2$@"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 뱃지 보유 · 최고 %lld%%"
+            "value" : "%1$@ 뱃지 보유 · 최고 %2$@"
           }
         }
       }
@@ -253,6 +288,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ 복사: %2$@"
+          }
+        }
+      }
+    },
+    "%@ 이상" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ or higher"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 이상"
+          }
+        }
+      }
+    },
+    "%@ 이상이면 %@로 승급해요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reach %1$@ or higher to upgrade to %2$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 이상이면 %2$@로 승급해요"
           }
         }
       }
@@ -401,6 +468,22 @@
         }
       }
     },
+    "%@를 달성하면 %@로 승급해요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hit %1$@ to upgrade to %2$@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@를 달성하면 %2$@로 승급해요"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -445,86 +528,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld / %lld 뱃지"
-          }
-        }
-      }
-    },
-    "%lld%%" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        }
-      }
-    },
-    "%lld%% 넘으면 뱃지" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Badges from %lld%%"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% 넘으면 뱃지"
-          }
-        }
-      }
-    },
-    "%lld%% 이상" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% or higher"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%% 이상"
-          }
-        }
-      }
-    },
-    "%lld%% 이상이면 %@로 승급해요" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reach %1$lld%% or higher to upgrade to %2$@"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%% 이상이면 %2$@로 승급해요"
-          }
-        }
-      }
-    },
-    "%lld%%를 달성하면 %@로 승급해요" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hit %1$lld%% to upgrade to %2$@"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%%를 달성하면 %2$@로 승급해요"
           }
         }
       }
@@ -604,9 +607,6 @@
           }
         }
       }
-    },
-    "100% 기준(sHigh)" : {
-      "shouldTranslate" : false
     },
     "가장 단순한 정답 심볼" : {
       "shouldTranslate" : false
@@ -738,7 +738,7 @@
     "검색 시간(점수 계산)" : {
       "shouldTranslate" : false
     },
-    "검색 중 %lld%%" : {
+    "검색 중 %@" : {
       "shouldTranslate" : false
     },
     "게임" : {
@@ -1377,7 +1377,7 @@
       "localizations" : {
         "ko" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "내 그림 %1$lld / %2$lld · 전체 %3$lld"
           }
         }
@@ -2055,18 +2055,18 @@
         }
       }
     },
-    "뱃지까지 %lld%% 남았어요" : {
+    "뱃지까지 %@ 남았어요" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld%% to go for a badge"
+            "value" : "%@ to go for a badge"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "뱃지까지 %lld%% 남았어요"
+            "value" : "뱃지까지 %@ 남았어요"
           }
         }
       }
@@ -2406,7 +2406,7 @@
         }
       }
     },
-    "상위 25%" : {
+    "상위 %@" : {
       "shouldTranslate" : false
     },
     "상태 확인 중" : {
@@ -2927,18 +2927,18 @@
         }
       }
     },
-    "심볼 준비 중 · %lld%%" : {
+    "심볼 준비 중 · %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparing symbols · %lld%%"
+            "value" : "Preparing symbols · %@"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "심볼 준비 중 · %lld%%"
+            "value" : "심볼 준비 중 · %@"
           }
         }
       }
@@ -2968,18 +2968,18 @@
     "아래 결과는 고른 점수 방식 기준이에요." : {
       "shouldTranslate" : false
     },
-    "아직 없는 뱃지 · %lld%% 이상으로 그려 보세요" : {
+    "아직 없는 뱃지 · %@ 이상으로 그려 보세요" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No badge yet · Draw it at %lld%% or higher"
+            "value" : "No badge yet · Draw it at %@ or higher"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "아직 없는 뱃지 · %lld%% 이상으로 그려 보세요"
+            "value" : "아직 없는 뱃지 · %@ 이상으로 그려 보세요"
           }
         }
       }
@@ -3131,7 +3131,7 @@
         }
       }
     },
-    "엉뚱한 1위가 뱃지 기준(%lld%%)을 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 기준 이상인 비율" : {
+    "엉뚱한 1위가 뱃지 기준(%@)을 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 기준 이상인 비율" : {
       "shouldTranslate" : false
     },
     "연결" : {
@@ -3281,7 +3281,55 @@
         }
       }
     },
-    "유사도 %로 비교하기" : {
+    "유사도 %@ 이상이면 브론즈 뱃지를 얻어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reach %@ similarity or higher to earn a Bronze badge"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "유사도 %@ 이상이면 브론즈 뱃지를 얻어요"
+          }
+        }
+      }
+    },
+    "유사도 %@ 이상인 심볼을 고르면 뱃지를 얻어요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a symbol with %@ similarity or higher to earn a badge"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "유사도 %@ 이상인 심볼을 고르면 뱃지를 얻어요"
+          }
+        }
+      }
+    },
+    "유사도 %@ 이상인 심볼을 고르면 뱃지를 얻어요. %@는 실버, %@는 골드, %@는 레전더리로 승급해요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a symbol with %1$@ similarity or higher to earn a badge. It upgrades to Silver at %2$@, Gold at %3$@, and Legendary at %4$@."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "유사도 %1$@ 이상인 심볼을 고르면 뱃지를 얻어요. %2$@는 실버, %3$@는 골드, %4$@는 레전더리로 승급해요."
+          }
+        }
+      }
+    },
+    "유사도로 비교하기" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3292,55 +3340,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "유사도 %로 비교하기"
-          }
-        }
-      }
-    },
-    "유사도 %lld%% 이상이면 브론즈 뱃지를 얻어요" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reach %lld%% similarity or higher to earn a Bronze badge"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "유사도 %lld%% 이상이면 브론즈 뱃지를 얻어요"
-          }
-        }
-      }
-    },
-    "유사도 %lld%% 이상인 심볼을 고르면 뱃지를 얻어요" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick a symbol with %lld%% similarity or higher to earn a badge"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "유사도 %lld%% 이상인 심볼을 고르면 뱃지를 얻어요"
-          }
-        }
-      }
-    },
-    "유사도 %lld%% 이상인 심볼을 고르면 뱃지를 얻어요. %lld%%는 실버, %lld%%는 골드, %lld%%는 레전더리로 승급해요." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick a symbol with %1$lld%% similarity or higher to earn a badge. It upgrades to Silver at %2$lld%%, Gold at %3$lld%%, and Legendary at %4$lld%%."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "유사도 %1$lld%% 이상인 심볼을 고르면 뱃지를 얻어요. %2$lld%%는 실버, %3$lld%%는 골드, %4$lld%%는 레전더리로 승급해요."
+            "value" : "유사도로 비교하기"
           }
         }
       }
@@ -4676,18 +4676,18 @@
         }
       }
     },
-    "한 획으로 그려서 %lld%% 이상" : {
+    "한 획으로 그려서 %@ 이상" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Score %lld%% or higher in a single stroke"
+            "value" : "Score %@ or higher in a single stroke"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "한 획으로 그려서 %lld%% 이상"
+            "value" : "한 획으로 그려서 %@ 이상"
           }
         }
       }
@@ -4708,34 +4708,34 @@
         }
       }
     },
-    "현재 %@ %lld%%" : {
+    "현재 %@ %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Now %1$@ %2$lld%%"
+            "value" : "Now %1$@ %2$@"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "현재 %1$@ %2$lld%%"
+            "value" : "현재 %1$@ %2$@"
           }
         }
       }
     },
-    "현재 %@ %lld%% · %@ %lld%%에 도전" : {
+    "현재 %@ %@ · %@ %@에 도전" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Now %1$@ %2$lld%% · Aim for %3$@ %4$lld%%"
+            "value" : "Now %1$@ %2$@ · Aim for %3$@ %4$@"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "현재 %1$@ %2$lld%% · %3$@ %4$lld%%에 도전"
+            "value" : "현재 %1$@ %2$@ · %3$@ %4$@에 도전"
           }
         }
       }

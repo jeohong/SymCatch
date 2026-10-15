@@ -67,7 +67,7 @@ struct BadgeDetailScreen: View {
             Divider().overlay(DSColor.separator)
             row("등급", value: badge.tier.displayName)
             Divider().overlay(DSColor.separator)
-            row("최고 유사도", value: "\(badge.bestSimilarity)%", emphasized: true)
+            row("최고 유사도", value: badge.bestSimilarity.percentText, emphasized: true)
             Divider().overlay(DSColor.separator)
             row("최근 승급", value: badge.upgradedAt.map(ProgressDateFormat.day) ?? String(localized: "없음"))
         }

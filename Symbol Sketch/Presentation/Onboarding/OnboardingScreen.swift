@@ -53,13 +53,13 @@ private struct IntroPages: View {
                     DrawToFindIllustration()
                 }
                 .tag(0)
-                IntroPage(title: String(localized: "유사도 %로 비교하기"),
+                IntroPage(title: String(localized: "유사도로 비교하기"),
                           message: String(localized: "그림과 가장 비슷한 심볼 10개를 유사도 순서로 보여 줘요. 원하는 심볼을 탭하면 이름과 코드를 바로 복사할 수 있어요.")) {
                     SimilarityIllustration()
                 }
                 .tag(1)
-                IntroPage(title: String(localized: "\(BadgeTierPolicy.threshold)% 넘으면 뱃지"),
-                          message: String(localized: "유사도 \(BadgeTier.bronze.minimumSimilarity)% 이상인 심볼을 고르면 뱃지를 얻어요. \(BadgeTier.silver.minimumSimilarity)%는 실버, \(BadgeTier.gold.minimumSimilarity)%는 골드, \(BadgeTier.legendary.minimumSimilarity)%는 레전더리로 승급해요.")) {
+                IntroPage(title: String(localized: "\(BadgeTierPolicy.threshold.percentText) 넘으면 뱃지"),
+                          message: String(localized: "유사도 \(BadgeTier.bronze.minimumSimilarity.percentText) 이상인 심볼을 고르면 뱃지를 얻어요. \(BadgeTier.silver.minimumSimilarity.percentText)는 실버, \(BadgeTier.gold.minimumSimilarity.percentText)는 골드, \(BadgeTier.legendary.minimumSimilarity.percentText)는 레전더리로 승급해요.")) {
                     BadgeTiersIllustration()
                 }
                 .tag(2)
@@ -215,7 +215,7 @@ private struct BadgeTiersIllustration: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(DSColor.textPrimary)
                     .fixedSize()
-                Text(tier.next == nil ? "\(tier.minimumSimilarity)%" : "\(tier.minimumSimilarity)% 이상")
+                Text(tier.next == nil ? "\(tier.minimumSimilarity.percentText)" : "\(tier.minimumSimilarity.percentText) 이상")
                     .font(.footnote)
                     .foregroundStyle(DSColor.textSecondary)
                     .fixedSize()
@@ -309,7 +309,7 @@ private struct PreparationStatus: View {
             switch preparation.state {
             case .checking, .preparing:
                 let progress: Double = if case .preparing(let value) = preparation.state { value } else { 0 }
-                Text("심볼 준비 중 · \(Int((progress * 100).rounded()))%")
+                Text("심볼 준비 중 · \(Int((progress * 100).rounded()).percentText)")
                     .font(DSFont.sectionHeader)
                     .foregroundStyle(DSColor.textSecondary)
                 ProgressView(value: progress)

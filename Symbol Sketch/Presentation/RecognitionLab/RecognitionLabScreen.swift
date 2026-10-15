@@ -166,7 +166,7 @@ private struct ResultRow: View {
             }
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 2) {
-                Text("\(match.similarity)%")
+                Text(match.similarity.percentText)
                     .font(.headline.monospacedDigit())
                 Text(match.score, format: .number.precision(.fractionLength(3)))
                     .font(.caption.monospacedDigit())

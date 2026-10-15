@@ -149,7 +149,7 @@ final class SymbolDetailViewModel {
     /// "실버 뱃지 보유 · 최고 92%". 뱃지가 없으면 nil.
     var badgeText: String? {
         guard let badge = selectedBadge else { return nil }
-        return String(localized: "\(badge.tier.displayName) 뱃지 보유 · 최고 \(badge.bestSimilarity)%")
+        return String(localized: "\(badge.tier.displayName) 뱃지 보유 · 최고 \(badge.bestSimilarity.percentText)")
     }
 
     var categoryNames: [String] {
@@ -164,7 +164,7 @@ final class SymbolDetailViewModel {
     var similarityCaption: String? {
         guard let similarity = request.similarity else { return nil }
         guard let tier = BadgeTierPolicy.tier(for: similarity) else {
-            return String(localized: "뱃지까지 \(BadgeTierPolicy.threshold - similarity)% 남았어요")
+            return String(localized: "뱃지까지 \((BadgeTierPolicy.threshold - similarity).percentText) 남았어요")
         }
         return String(localized: "\(tier.displayName) 등급 구간이에요")
     }

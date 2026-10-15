@@ -41,7 +41,7 @@ struct DuoResultCard: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             HStack(spacing: Spacing.s) {
-                Text("\(match.similarity)%")
+                Text(match.similarity.percentText)
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(DSColor.textPrimary)
                     .fixedSize()

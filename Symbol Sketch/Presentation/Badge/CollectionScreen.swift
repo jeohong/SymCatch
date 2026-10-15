@@ -65,7 +65,7 @@ struct CollectionScreen: View {
     /// 뱃지가 하나도 없을 때(DESIGN_NOTES 7.2 권장: 안내 1줄 + 그리러 가기)
     private var emptyHint: some View {
         VStack(spacing: Spacing.m) {
-            Text("유사도 \(BadgeTierPolicy.threshold)% 이상인 심볼을 고르면 뱃지를 얻어요")
+            Text("유사도 \(BadgeTierPolicy.threshold.percentText) 이상인 심볼을 고르면 뱃지를 얻어요")
                 .font(.subheadline)
                 .foregroundStyle(DSColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -308,7 +308,7 @@ private struct MedalCell: View {
     private var bubble: some View {
         VStack(spacing: Spacing.xxs) {
             Text(name).font(DSFont.symbolNameSmall)
-            Text(badge.map { "\($0.tier.displayName) · \($0.bestSimilarity)%" } ?? String(localized: "미획득"))
+            Text(badge.map { "\($0.tier.displayName) · \($0.bestSimilarity.percentText)" } ?? String(localized: "미획득"))
                 .font(.caption2)
                 .opacity(0.75)
         }

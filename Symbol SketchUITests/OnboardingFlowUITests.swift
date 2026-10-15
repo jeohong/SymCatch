@@ -22,7 +22,7 @@ final class OnboardingFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["그려서 찾기"].waitForExistence(timeout: 10), "첫 실행이면 온보딩이 보여야 한다")
         attach(app, "intro1")
         app.buttons["다음"].tap()
-        XCTAssertTrue(app.staticTexts["유사도 %로 비교하기"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["유사도로 비교하기"].waitForExistence(timeout: 3))
         attach(app, "intro2")
         app.buttons["다음"].tap()
         XCTAssertTrue(app.staticTexts["85% 넘으면 뱃지"].waitForExistence(timeout: 3))

@@ -49,10 +49,10 @@ struct EvaluationRunScreen: View {
                         Text("아래 결과는 고른 점수 방식 기준이에요.")
                     }
                 }
-                Section("100% 기준(sHigh)") {
+                Section("\(100.percentText) 기준(sHigh)") {
                     Picker("정답 점수 분위", selection: $viewModel.highPercentile) {
                         Text("중앙값").tag(0.5)
-                        Text("상위 25%").tag(0.75)
+                        Text("상위 \(25.percentText)").tag(0.75)
                     }
                     .pickerStyle(.segmented)
                 }
@@ -84,7 +84,7 @@ struct EvaluationRunScreen: View {
             Text("심볼 준비가 끝나지 않았어요. 그리기 탭에서 준비를 마친 뒤 실행하세요.")
                 .foregroundStyle(DSColor.danger)
         case .running(let progress):
-            ProgressView(value: progress) { Text("검색 중 \(Int(progress * 100))%") }
+            ProgressView(value: progress) { Text("검색 중 \(Int(progress * 100).percentText)") }
         case .failed(let message):
             Text(message).foregroundStyle(DSColor.danger)
         }
@@ -112,7 +112,7 @@ struct EvaluationRunScreen: View {
         } header: {
             Text("엄격도별 결과")
         } footer: {
-            Text("엉뚱한 1위가 뱃지 기준(\(BadgeTierPolicy.threshold)%)을 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 기준 이상인 비율")
+            Text("엉뚱한 1위가 뱃지 기준(\(BadgeTierPolicy.threshold.percentText))을 넘는 비율을 목표로 sHigh를 정했을 때, 시험용 그림에서 정답·오답이 기준 이상인 비율")
         }
         Section("오답인데 뱃지 기준 이상이 자주 나온 심볼") {
             if report.intruders.isEmpty { Text("없음").foregroundStyle(DSColor.textSecondary) }

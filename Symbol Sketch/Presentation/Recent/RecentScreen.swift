@@ -185,7 +185,7 @@ struct RecentRow: View {
     private var similarity: some View {
         HStack(spacing: Spacing.xs) {
             if let badge { BadgeDot(tier: badge.tier) }
-            Text("\(record.similarity)%")
+            Text(record.similarity.percentText)
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(DSColor.textPrimary)
                 .fixedSize()   // "100%"가 두 줄로 꺾이지 않게

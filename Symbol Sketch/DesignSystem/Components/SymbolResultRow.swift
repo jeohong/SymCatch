@@ -92,7 +92,7 @@ struct SymbolResultRow: View {
 
     private var similarity: some View {
         VStack(alignment: .trailing, spacing: Spacing.s - Spacing.xxs) {
-            Text("\(match.similarity)%")
+            Text(match.similarity.percentText)
                 .font(DSFont.similarity)
                 .foregroundStyle(DSColor.textPrimary)
             SimilarityBar(percent: match.similarity)
