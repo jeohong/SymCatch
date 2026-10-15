@@ -11,6 +11,9 @@ import Domain
 /// 심볼 검색(S9). 검색어가 없으면 카테고리 둘러보기, 있으면 결과 타일 격자(기획서 6장 S9).
 struct SymbolSearchScreen: View {
     @Bindable var viewModel: SymbolSearchViewModel
+    /// 시스템 검색 탭(iOS 26+ 좁은 창, 결정 24) 안이면 검색창을 기본 위치로 달아 시스템이 탭 바 자리로 옮기게 한다.
+    /// 아니면(iOS 17~25, 넓은 창) 위쪽 내비게이션 바 아래에 항상 보이게 단다.
+    var searchFieldInTabBar = false
 
     var body: some View {
         ScrollView {
@@ -28,9 +31,7 @@ struct SymbolSearchScreen: View {
         .scrollDismissesKeyboard(.immediately)
         .background(DSColor.bgGrouped)
         .navigationTitle("심볼 검색")
-        .searchable(text: $viewModel.query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("하트, heart처럼 검색"))
-        .textInputAutocapitalization(.never)
-        .autocorrectionDisabled()
+        .modifier(SearchField(query: $viewModel.query, inTabBar: searchFieldInTabBar))
         .task { await viewModel.load() }
     }
 
@@ -211,3 +212,21 @@ private func searchPreview(query: String) -> some View {
 #Preview("라이트") { searchPreview(query: "").preferredColorScheme(.light) }
 #Preview("다크") { searchPreview(query: "heart").preferredColorScheme(.dark) }
 #endif
+
+/// 검색창 위치: 탭 바 자리(시스템 검색 탭, iOS 26+ 좁은 창) 또는 위쪽 내비게이션 바 아래(iOS 17~25, 넓은 창)
+private struct SearchField: ViewModifier {
+    @Binding var query: String
+    let inTabBar: Bool
+
+    func body(content: Content) -> some View {
+        Group {
+            if inTabBar {
+                content.searchable(text: $query, prompt: Text("하트, heart처럼 검색"))
+            } else {
+                content.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("하트, heart처럼 검색"))
+            }
+        }
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+    }
+}

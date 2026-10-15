@@ -11,12 +11,15 @@ import XCTest
 final class SymbolSearchUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
     }
 
     @MainActor
     func test_이름으로_찾아_상세로_가고_카테고리를_둘러본다() throws {
         let app = launchWithInMemoryProgress()
-        app.tabBars.buttons["검색"].tap()
+        // iPhone은 아래 탭 바, iPad·펼친 Duo는 위쪽 탭 바·레일이라 탭 바가 없으면 버튼으로 찾는다.
+        let tabBarSearch = app.tabBars.buttons["검색"]
+        (tabBarSearch.waitForExistence(timeout: 5) ? tabBarSearch : app.buttons["검색"].firstMatch).tap()
 
         XCTAssertTrue(app.staticTexts["카테고리 둘러보기"].waitForExistence(timeout: 10), "처음에는 카테고리 둘러보기")
         attach(app, "browse")
@@ -32,6 +35,7 @@ final class SymbolSearchUITests: XCTestCase {
 
         // 한국어로도 찾는다(사전: heart → 하트)
         field.buttons.firstMatch.tap()   // 지우기(✕)
+        app.searchFields.firstMatch.tap()   // iPad는 지우기 뒤 포커스가 풀린다
         app.searchFields.firstMatch.typeText("하트")
         XCTAssertTrue(app.buttons["heart"].waitForExistence(timeout: 5), "'하트'로 heart를 찾아야 한다")
         attach(app, "results_korean")

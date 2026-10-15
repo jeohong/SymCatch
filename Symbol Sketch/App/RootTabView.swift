@@ -36,47 +36,7 @@ struct RootTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $router.selectedTab) {
-            NavigationStack(path: $router.drawPath) {
-                DrawScreen(viewModel: drawViewModel)
-                    .navigationDestination(for: DrawRoute.self) { route in
-                        switch route {
-                        case .symbolDetail(let request):
-                            SymbolDetailScreen(viewModel: container.makeSymbolDetailViewModel(request: request))
-                        }
-                    }
-            }
-            .onChange(of: router.drawPath) { oldPath, newPath in
-                // 상세에서 뒤로 돌아오면 캔버스를 비운다(기획서 5.1-4).
-                if newPath.isEmpty, !oldPath.isEmpty { drawViewModel.returnedFromDetail() }
-            }
-            .tabItem { Label("그리기", systemImage: "scribble") }
-            .tag(AppTab.draw)
-
-            Group {
-                if isSplit { recentSplit } else { recentStack }
-            }
-            .tabItem { Label("최근", systemImage: "clock.arrow.circlepath") }
-            .tag(AppTab.recent)
-
-            Group {
-                if isSplit { collectionSplit } else { collectionStack }
-            }
-            .tabItem { Label("콜렉션", systemImage: "rosette") }
-            .tag(AppTab.collection)
-
-            // 심볼 검색(S9): 그리기와 별개로 글자로 찾기
-            NavigationStack(path: $router.searchPath) {
-                SymbolSearchScreen(viewModel: searchViewModel)
-                    .navigationDestination(for: SearchRoute.self) { route in
-                        switch route {
-                        case .symbolDetail(let request): symbolDetail(request)
-                        }
-                    }
-            }
-            .tabItem { Label("검색", systemImage: "magnifyingglass") }
-            .tag(AppTab.search)
-        }
+        tabs
         .overlay {
             // 축하 모달(S4)은 탭 바까지 덮는다.
             if let celebration = router.celebration {
@@ -119,6 +79,97 @@ struct RootTabView: View {
             guard let name else { return }
             drawViewModel.startChallenge(symbolName: name)
             router.pendingChallenge = nil
+        }
+    }
+
+    // MARK: - 탭 구성
+
+    /// iOS 18+: 검색은 시스템 검색 탭(`Tab(role: .search)`, 결정 24). iOS 17: 기존 `.tabItem` 구성.
+    /// iOS 26+ 좁은 창: 탭 바 오른쪽에 떨어진 둥근 검색 버튼 + 탭 바 자리 검색창(사진 앱 방식).
+    /// iOS 27 SDK부터는 검색 탭을 눌렀을 때 검색을 시작하도록(`.searchTabSelection`) 해야 버튼이 떨어져 나온다.
+    /// 넓은 창(iPad, 펼친 Duo 가로): 탭 바가 위에 있어 검색창이 탭 바 오른쪽 끝에 작게 붙으므로,
+    /// 검색 화면 제목 아래에 넓은 검색창을 두고 탭을 눌러도 키보드는 띄우지 않는다(결정 24-1).
+    @ViewBuilder
+    private var tabs: some View {
+        if #available(iOS 26, *) {
+            searchRoleTabs(searchFieldInTabBar: !isSplit)
+                .tabViewSearchActivation(isSplit ? .automatic : .searchTabSelection)
+        } else if #available(iOS 18, *) {
+            searchRoleTabs(searchFieldInTabBar: false)
+        } else {
+            legacyTabs
+        }
+    }
+
+    @available(iOS 18, *)
+    private func searchRoleTabs(searchFieldInTabBar: Bool) -> some View {
+        TabView(selection: $router.selectedTab) {
+            Tab("그리기", systemImage: "scribble", value: AppTab.draw) { drawTab }
+            Tab("최근", systemImage: "clock.arrow.circlepath", value: AppTab.recent) { recentTab }
+            Tab("콜렉션", systemImage: "rosette", value: AppTab.collection) { collectionTab }
+            // 제목·아이콘은 시스템 기본("검색", 돋보기)
+            Tab(value: AppTab.search, role: .search) {
+                searchTab(searchFieldInTabBar: searchFieldInTabBar)
+            }
+        }
+    }
+
+    private var legacyTabs: some View {
+        TabView(selection: $router.selectedTab) {
+            drawTab
+                .tabItem { Label("그리기", systemImage: "scribble") }
+                .tag(AppTab.draw)
+            recentTab
+                .tabItem { Label("최근", systemImage: "clock.arrow.circlepath") }
+                .tag(AppTab.recent)
+            collectionTab
+                .tabItem { Label("콜렉션", systemImage: "rosette") }
+                .tag(AppTab.collection)
+            searchTab(searchFieldInTabBar: false)
+                .tabItem { Label("검색", systemImage: "magnifyingglass") }
+                .tag(AppTab.search)
+        }
+    }
+
+    // MARK: - 그리기(S1)
+
+    private var drawTab: some View {
+        NavigationStack(path: $router.drawPath) {
+            DrawScreen(viewModel: drawViewModel)
+                .navigationDestination(for: DrawRoute.self) { route in
+                    switch route {
+                    case .symbolDetail(let request):
+                        SymbolDetailScreen(viewModel: container.makeSymbolDetailViewModel(request: request))
+                    }
+                }
+        }
+        .onChange(of: router.drawPath) { oldPath, newPath in
+            // 상세에서 뒤로 돌아오면 캔버스를 비운다(기획서 5.1-4).
+            if newPath.isEmpty, !oldPath.isEmpty { drawViewModel.returnedFromDetail() }
+        }
+    }
+
+    @ViewBuilder
+    private var recentTab: some View {
+        if isSplit { recentSplit } else { recentStack }
+    }
+
+    @ViewBuilder
+    private var collectionTab: some View {
+        if isSplit { collectionSplit } else { collectionStack }
+    }
+
+    // MARK: - 검색(S9)
+
+    /// 심볼 검색(S9): 그리기와 별개로 글자로 찾기. `searchFieldInTabBar`면 검색창이 탭 바 자리에 뜬다(iOS 26+).
+    private func searchTab(searchFieldInTabBar: Bool) -> some View {
+        NavigationStack(path: $router.searchPath) {
+            SymbolSearchScreen(viewModel: searchViewModel, searchFieldInTabBar: searchFieldInTabBar)
+                .navigationDestination(for: SearchRoute.self) { route in
+                    switch route {
+                    case .symbolDetail(let request): symbolDetail(request)
+                    }
+                }
         }
     }
 
