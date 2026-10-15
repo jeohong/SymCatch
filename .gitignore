@@ -80,3 +80,9 @@ fastlane/test_output
 # https://github.com/johnno1962/injectionforxcode
 
 iOSInjectionProject/
+
+# Local planning docs (spec, plan, design, eval) — not committed
+docs/
+
+# Claude Code project instructions — local only
+CLAUDE.md
