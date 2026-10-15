@@ -68,8 +68,8 @@ final class EvaluationRunViewModel {
         }
         state = .running(progress: 0)
         do {
-            let result = try await runCalibration.execute { progress in
-                Task { @MainActor [weak self] in
+            let result = try await runCalibration.execute { [weak self] progress in
+                Task { @MainActor in
                     guard let self, case .running = self.state else { return }
                     self.state = .running(progress: progress)
                 }
