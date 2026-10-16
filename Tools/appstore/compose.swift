@@ -42,6 +42,8 @@ struct Device: Decodable {
     let width: Double
     /// 기기를 돌려 그릴 각도(도, 시계 방향)
     let rotation: Double?
+    /// kind가 mockupFold일 때 쓸 목업 이미지(저장소 루트 기준, 흰 배경 PNG)
+    let mockup: String?
 }
 
 // MARK: - 색
@@ -139,13 +141,17 @@ struct FrameStyle {
     let island: Bool
     let punchHole: Bool
     let hinge: Bool
+    /// 접히는 화면의 주름(Duo 펼침)
+    var crease = false
+    /// 접힌 폰의 등(Duo 닫힘): 왼쪽에 경첩 쪽 모서리를 그린다
+    var spine = false
 }
 
 func style(for kind: String) -> FrameStyle {
     switch kind {
     case "ipad": FrameStyle(bezel: 0.028, radius: 0.055, island: false, punchHole: false, hinge: false)
-    case "duoOpen", "duoFold": FrameStyle(bezel: 0.024, radius: 0.07, island: false, punchHole: true, hinge: true)
-    case "duoClosed": FrameStyle(bezel: 0.032, radius: 0.13, island: false, punchHole: true, hinge: false)
+    case "duoOpen", "duoFold": FrameStyle(bezel: 0.022, radius: 0.06, island: false, punchHole: false, hinge: true, crease: true)
+    case "duoClosed": FrameStyle(bezel: 0.034, radius: 0.12, island: false, punchHole: false, hinge: false, spine: true)
     default: FrameStyle(bezel: 0.034, radius: 0.15, island: true, punchHole: false, hinge: false)
     }
 }
@@ -186,6 +192,20 @@ func renderDevice(screen: CGImage, style: FrameStyle, width deviceWidth: CGFloat
     context.interpolationQuality = .high
     context.draw(screen, in: CGRect(origin: .zero, size: screenRect.size))
     context.restoreGState()
+    if style.crease {
+        // 접히는 자리의 주름: 가로로 긴 화면은 세로 선, 세로로 긴 화면은 가로 선
+        let vertical = screenRect.width > screenRect.height
+        let band = min(screenRect.width, screenRect.height) * 0.018
+        let mid = vertical ? screenRect.midX : screenRect.midY
+        let shade = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB),
+                               colors: [NSColor.black.withAlphaComponent(0).cgColor, NSColor.black.withAlphaComponent(0.13).cgColor,
+                                        NSColor.white.withAlphaComponent(0.18).cgColor, NSColor.black.withAlphaComponent(0.13).cgColor,
+                                        NSColor.black.withAlphaComponent(0).cgColor] as CFArray,
+                               locations: [0, 0.38, 0.5, 0.62, 1])!
+        let from = vertical ? CGPoint(x: mid - band, y: 0) : CGPoint(x: 0, y: mid - band)
+        let to = vertical ? CGPoint(x: mid + band, y: 0) : CGPoint(x: 0, y: mid + band)
+        context.drawLinearGradient(shade, start: from, end: to, options: [])
+    }
     context.restoreGState()
 
     if style.island {
@@ -215,41 +235,368 @@ func renderDevice(screen: CGImage, style: FrameStyle, width deviceWidth: CGFloat
             }
         }
     }
-    return context.makeImage()!
+    let device = context.makeImage()!
+    guard style.spine else { return device }
+
+    // 접힌 폰: 왼쪽에 두 판이 맞물린 등(경첩)을 덧붙인다.
+    let spineWidth = deviceWidth * 0.045
+    let wrapped = makeContext(width: width + Int(spineWidth), height: height)
+    flipped(wrapped, height: height)
+    let inset = outerRadius * 0.32
+    let spineRect = CGRect(x: 0, y: inset, width: spineWidth * 2, height: deviceHeight - inset * 2)
+    wrapped.saveGState()
+    wrapped.addPath(CGPath(roundedRect: spineRect, cornerWidth: spineWidth * 0.95, cornerHeight: spineWidth * 1.6, transform: nil))
+    wrapped.clip()
+    let metal = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB),
+                           colors: [NSColor(white: 0.16, alpha: 1).cgColor, NSColor(white: 0.42, alpha: 1).cgColor,
+                                    NSColor(white: 0.22, alpha: 1).cgColor, NSColor(white: 0.1, alpha: 1).cgColor] as CFArray,
+                           locations: [0, 0.35, 0.7, 1])!
+    wrapped.drawLinearGradient(metal, start: CGPoint(x: 0, y: 0), end: CGPoint(x: spineWidth, y: 0), options: [])
+    wrapped.restoreGState()
+    wrapped.saveGState()
+    wrapped.translateBy(x: spineWidth, y: CGFloat(height))
+    wrapped.scaleBy(x: 1, y: -1)
+    wrapped.draw(device, in: CGRect(x: 0, y: 0, width: width, height: height))
+    wrapped.restoreGState()
+    return wrapped.makeImage()!
 }
 
-/// 반쯤 접힌 모습: 위 절반을 뒤로 젖힌 원근으로 바꾸고 아래 절반은 그대로 둔다.
+/// 반쯤 접힌 모습(노트북 자세): 세로로 든 펼친 기기를 가운데 가로 선에서 접는다.
+/// 위 판은 정면 그대로 세우고, 아래 판은 책상에 눕혀 높이를 줄이고 앞쪽을 넓힌다(위 판의 약 60%, 앞쪽 양옆 6%).
+/// 화면과 베젤은 접히는 자리에서 끊기지 않고 이어지며(경첩 막대 없음), 아래 판 앞쪽에만 은색 두께가 보인다.
 func foldDevice(_ device: CGImage) -> CGImage {
     let width = CGFloat(device.width), height = CGFloat(device.height)
     let half = height / 2
     let ciImage = CIImage(cgImage: device)
-    // CIImage는 아래가 0: 위 절반은 y ∈ [half, height]
-    let top = ciImage.cropped(to: CGRect(x: 0, y: half, width: width, height: half))
-    let bottom = ciImage.cropped(to: CGRect(x: 0, y: 0, width: width, height: half))
-    let squeeze = width * 0.09       // 먼 쪽(위 끝)이 좁아지는 양
-    let foreshorten = half * 0.22    // 기울어 짧아지는 양
-    let perspective = CIFilter(name: "CIPerspectiveTransform")!
-    perspective.setValue(top, forKey: kCIInputImageKey)
-    perspective.setValue(CIVector(x: squeeze, y: height - foreshorten), forKey: "inputTopLeft")
-    perspective.setValue(CIVector(x: width - squeeze, y: height - foreshorten), forKey: "inputTopRight")
-    perspective.setValue(CIVector(x: 0, y: half), forKey: "inputBottomLeft")
-    perspective.setValue(CIVector(x: width, y: half), forKey: "inputBottomRight")
-    var tilted = perspective.outputImage!
-    // 젖힌 면은 조금 어둡게(빛을 덜 받는 쪽)
-    tilted = tilted.applyingFilter("CIColorControls", parameters: [kCIInputBrightnessKey: -0.06])
-    let composed = tilted.composited(over: bottom)
-    let output = CIContext().createCGImage(composed, from: CGRect(x: 0, y: 0, width: width, height: height))!
-    // 접힌 선 그림자
-    let context = makeContext(width: Int(width), height: Int(height))
-    context.draw(output, in: CGRect(x: 0, y: 0, width: width, height: height))
-    let shade = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB),
-                           colors: [NSColor.black.withAlphaComponent(0.35).cgColor, NSColor.black.withAlphaComponent(0).cgColor] as CFArray,
-                           locations: [0, 1])!
+    let bottomHalf = ciImage.cropped(to: CGRect(x: 0, y: 0, width: width, height: half))
+    guard let topHalf = device.cropping(to: CGRect(x: 0, y: 0, width: width, height: half)) else { return device }  // CGImage는 위가 0
+
+    let spread = width * 0.06
+    let bottomHeight = half * 0.61
+    let thickness = width * 0.03
+    let room = width * 0.06                      // 그림자 여백
+    let outWidth = width + spread * 2 + room * 2
+    let outHeight = half + bottomHeight + thickness + room
+    let left = room + spread                     // 위 판 왼쪽
+    let base = room + thickness                  // 아래 판 화면 앞쪽 가장자리(CoreGraphics, 아래가 0)
+    let fold = base + bottomHeight               // 접히는 자리
+
+    let filter = CIFilter(name: "CIPerspectiveTransform")!
+    filter.setValue(bottomHalf, forKey: kCIInputImageKey)
+    filter.setValue(CIVector(x: left, y: fold), forKey: "inputTopLeft")
+    filter.setValue(CIVector(x: left + width, y: fold), forKey: "inputTopRight")
+    filter.setValue(CIVector(x: room, y: base), forKey: "inputBottomLeft")
+    filter.setValue(CIVector(x: room + width + spread * 2, y: base), forKey: "inputBottomRight")
+    let full = CGRect(x: 0, y: 0, width: outWidth, height: outHeight)
+    let bottomImage = CIContext().createCGImage(filter.outputImage!, from: full)!
+    let space = CGColorSpace(name: CGColorSpace.sRGB)
+    let context = makeContext(width: Int(outWidth), height: Int(outHeight))
+
+    // 책상 그림자
     context.saveGState()
-    context.clip(to: CGRect(x: 0, y: half, width: width, height: half * 0.12))
-    context.drawLinearGradient(shade, start: CGPoint(x: 0, y: half), end: CGPoint(x: 0, y: half + half * 0.12), options: [])
+    context.setShadow(offset: CGSize(width: 0, height: -width * 0.02), blur: width * 0.05, color: CGColor(gray: 0, alpha: 0.4))
+    context.setFillColor(CGColor(gray: 0, alpha: 1))
+    context.fill(CGRect(x: room + width * 0.03, y: base - thickness * 0.8, width: width + spread * 2 - width * 0.06, height: thickness))
+    context.restoreGState()
+
+    // 아래 판 앞쪽 두께: 둥근 끝의 은색 띠
+    let front = CGRect(x: room, y: base - thickness, width: width + spread * 2, height: thickness * 1.6)
+    context.saveGState()
+    context.addPath(CGPath(roundedRect: front, cornerWidth: thickness * 1.2, cornerHeight: thickness * 0.8, transform: nil))
+    context.clip()
+    let edge = CGGradient(colorsSpace: space, colors: [CGColor(srgbRed: 0.98, green: 0.98, blue: 0.97, alpha: 1),
+                                                       CGColor(srgbRed: 0.78, green: 0.79, blue: 0.78, alpha: 1),
+                                                       CGColor(srgbRed: 0.6, green: 0.61, blue: 0.62, alpha: 1)] as CFArray,
+                          locations: [0, 0.5, 1])!
+    context.drawLinearGradient(edge, start: CGPoint(x: 0, y: front.maxY), end: CGPoint(x: 0, y: front.minY), options: [])
+    // 옆 버튼·안테나 선처럼 보이는 가는 이음 자국
+    context.setFillColor(CGColor(gray: 0.55, alpha: 0.7))
+    for x in [front.minX + front.width * 0.1, front.maxX - front.width * 0.1] {
+        context.fill(CGRect(x: x, y: front.minY, width: width * 0.003, height: thickness))
+    }
+    context.restoreGState()
+
+    // 아래 판(눕힌 화면) + 은은한 빛 반사
+    context.draw(bottomImage, in: full)
+    let plate = CGMutablePath()
+    plate.addLines(between: [CGPoint(x: room, y: base), CGPoint(x: room + width + spread * 2, y: base),
+                             CGPoint(x: left + width, y: fold), CGPoint(x: left, y: fold)])
+    plate.closeSubpath()
+    context.saveGState()
+    context.addPath(plate)
+    context.clip()
+    let glare = CGGradient(colorsSpace: space, colors: [CGColor(gray: 1, alpha: 0), CGColor(gray: 1, alpha: 0.12), CGColor(gray: 1, alpha: 0)] as CFArray,
+                           locations: [0, 0.5, 1])!
+    context.drawLinearGradient(glare, start: CGPoint(x: room, y: base), end: CGPoint(x: left + width * 0.7, y: fold), options: [])
+    context.restoreGState()
+
+    // 위 판(정면 그대로)
+    context.draw(topHalf, in: CGRect(x: left, y: fold, width: width, height: half))
+    // 접히는 자리: 아주 옅은 굽은 면 그늘(선이 아니라 면이 꺾이는 느낌)
+    context.saveGState()
+    context.clip(to: CGRect(x: left, y: fold - width * 0.012, width: width, height: width * 0.024))
+    let bend = CGGradient(colorsSpace: space, colors: [CGColor(gray: 0, alpha: 0), CGColor(gray: 0, alpha: 0.08), CGColor(gray: 0, alpha: 0)] as CFArray,
+                          locations: [0, 0.5, 1])!
+    context.drawLinearGradient(bend, start: CGPoint(x: 0, y: fold - width * 0.012), end: CGPoint(x: 0, y: fold + width * 0.012), options: [])
     context.restoreGState()
     return context.makeImage()!
+}
+
+// MARK: - iPhone Duo 테두리(시뮬레이터 화면 마스크 기준)
+
+/// 시뮬레이터의 Duo 화면 모양 PDF(CoreSimulator 기기 정의에 들어 있음)
+let duoProfile = "/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone Duo.simdevicetype/Contents/Resources/"
+let duoOuterMask = duoProfile + "1C896A2B-F0D7-405C-8D0F-66E4B80AD044.pdf"   // 바깥 화면: 왼쪽(접히는 쪽) 각지고 오른쪽 둥근 모양
+let duoInnerMask = duoProfile + "BF0DC480-5EE2-4EC1-B02B-C75E94759832.pdf"   // 안쪽 화면: 고르게 둥근 모양(세로 기준)
+
+/// PDF 모양을 주어진 크기의 알파 이미지로 그린다.
+/// 가로로 긴 크기면 세로 모양을 시계 방향으로 90도 돌린다(기기를 오른쪽으로 돌린 것과 같다: 왼쪽 → 위).
+func shapeImage(_ path: String, size: CGSize) -> CGImage {
+    let page = CGPDFDocument(URL(fileURLWithPath: path) as CFURL)!.page(at: 1)!
+    let box = page.getBoxRect(.mediaBox)
+    let rotate = (size.width > size.height) != (box.width > box.height)
+    let native = rotate ? CGSize(width: size.height, height: size.width) : size
+    let context = makeContext(width: Int(native.width.rounded()), height: Int(native.height.rounded()))
+    context.scaleBy(x: native.width / box.width, y: native.height / box.height)
+    // PDF 가장자리의 얇은 외곽선(작업 영역 테두리)이 같이 그려지지 않도록 안쪽만 그린다.
+    context.clip(to: box.insetBy(dx: box.width * 0.004, dy: box.height * 0.004))
+    context.drawPDFPage(page)
+    let image = context.makeImage()!
+    return rotate ? rotatedClockwise(image) : image
+}
+
+/// 이미지를 시계 방향으로 90도 돌린다.
+func rotatedClockwise(_ image: CGImage) -> CGImage {
+    let context = makeContext(width: image.height, height: image.width)
+    context.translateBy(x: 0, y: CGFloat(image.width))
+    context.rotate(by: -.pi / 2)
+    context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+    return context.makeImage()!
+}
+
+/// 모양(알파) 안에만 색을 채운다.
+func fillShape(_ context: CGContext, _ shape: CGImage, in rect: CGRect, color: CGColor) {
+    context.saveGState()
+    context.beginTransparencyLayer(auxiliaryInfo: nil)
+    context.draw(shape, in: rect)
+    context.setBlendMode(.sourceIn)
+    context.setFillColor(color)
+    context.fill(rect)
+    context.endTransparencyLayer()
+    context.restoreGState()
+}
+
+// Apple 소개 이미지의 밝은 은색 테두리와 경첩
+let duoSilver = CGColor(srgbRed: 0xCF / 255, green: 0xD2 / 255, blue: 0xD7 / 255, alpha: 1)
+let duoSilverEdge = CGColor(srgbRed: 0xA4 / 255, green: 0xA8 / 255, blue: 0xB0 / 255, alpha: 1)
+let duoHinge = CGColor(srgbRed: 0xB4 / 255, green: 0xB8 / 255, blue: 0xBF / 255, alpha: 1)
+let duoBlack = CGColor(srgbRed: 0x07 / 255, green: 0x07 / 255, blue: 0x09 / 255, alpha: 1)
+
+/// Duo 기기 이미지(Apple HIG 그림 기준).
+/// 은색 금속 테두리 → 얇은 검정 베젤 → 화면(시뮬레이터 화면 마스크 모양).
+/// 닫힘: 접히는 쪽(세로면 왼쪽, 가로면 위)에 경첩 띠, 바깥 카메라는 세로면 오른쪽 위, 가로면 오른쪽 아래.
+func renderDuo(screen: CGImage, closed: Bool, width deviceWidth: CGFloat) -> CGImage {
+    let landscape = screen.width > screen.height
+    let aspect = CGFloat(screen.height) / CGFloat(screen.width)
+    // 두께는 기기의 짧은 변 기준
+    let unit = landscape ? deviceWidth * aspect : deviceWidth
+    let metal = unit * 0.009, bezel = unit * 0.012
+    let hinge: CGFloat = closed ? unit * 0.026 : 0
+    let side = metal + bezel
+    // 폭 방향: 화면 + 양쪽 테두리 (+ 세로 닫힘이면 왼쪽 경첩)
+    let screenWidth = deviceWidth - side * 2 - (closed && !landscape ? hinge : 0)
+    let screenHeight = screenWidth * aspect
+    let deviceHeight = screenHeight + side * 2 + (closed && landscape ? hinge : 0)
+    let width = Int(deviceWidth.rounded(.up)), height = Int(deviceHeight.rounded(.up))
+    let context = makeContext(width: width, height: height)
+    let mask = closed ? duoOuterMask : duoInnerMask
+
+    // CoreGraphics 좌표는 아래가 0: 가로 닫힘의 경첩(위쪽)은 maxY 쪽
+    let hingeLeft = closed && !landscape ? hinge : 0
+    let screenRect = CGRect(x: hingeLeft + side, y: side, width: screenWidth, height: screenHeight)
+    let bezelRect = screenRect.insetBy(dx: -bezel, dy: -bezel)
+    let bodyRect = bezelRect.insetBy(dx: -metal, dy: -metal)
+
+    if closed {
+        // 경첩 띠: 몸체 바깥으로 이어진 둥근 막대
+        let band = landscape
+            ? CGRect(x: bodyRect.minX + unit * 0.01, y: bodyRect.maxY - metal * 2, width: bodyRect.width - unit * 0.02, height: hinge + metal * 2)
+            : CGRect(x: 0, y: bodyRect.minY + unit * 0.01, width: hinge + metal * 2, height: bodyRect.height - unit * 0.02)
+        context.addPath(CGPath(roundedRect: band, cornerWidth: hinge * 0.45, cornerHeight: hinge * 0.45, transform: nil))
+        context.setFillColor(duoHinge)
+        context.fillPath()
+        // 경첩 이음선
+        context.setFillColor(duoSilverEdge)
+        if landscape {
+            context.fill(CGRect(x: band.minX + hinge, y: band.minY + band.height * 0.55, width: band.width - hinge * 2, height: unit * 0.0025))
+        } else {
+            context.fill(CGRect(x: band.minX + band.width * 0.42, y: band.minY + hinge, width: unit * 0.0025, height: band.height - hinge * 2))
+        }
+    }
+    fillShape(context, shapeImage(mask, size: bodyRect.insetBy(dx: -unit * 0.002, dy: -unit * 0.002).size),
+              in: bodyRect.insetBy(dx: -unit * 0.002, dy: -unit * 0.002), color: duoSilverEdge)
+    fillShape(context, shapeImage(mask, size: bodyRect.size), in: bodyRect, color: duoSilver)
+    fillShape(context, shapeImage(mask, size: bezelRect.size), in: bezelRect, color: duoBlack)
+
+    // 같은 픽셀 격자에서 잘라야 가장자리에 반쯤 남는 픽셀(가는 선)이 생기지 않는다.
+    let screenMask = shapeImage(mask, size: screenRect.size)
+    let cut = makeContext(width: screenMask.width, height: screenMask.height)
+    let cutRect = CGRect(x: 0, y: 0, width: screenMask.width, height: screenMask.height)
+    cut.interpolationQuality = .high
+    cut.draw(screen, in: cutRect)
+    cut.setBlendMode(.destinationIn)
+    cut.draw(screenMask, in: cutRect)
+    context.interpolationQuality = .high
+    context.draw(cut.makeImage()!, in: screenRect)
+
+    if closed {
+        // 바깥 카메라: 세로 기준 (왼쪽에서 0.905, 위에서 0.068) → 시계 방향으로 돌리면 (0.932, 0.905)
+        let u: CGFloat = landscape ? 0.932 : 0.905, v: CGFloat = landscape ? 0.905 : 0.068
+        let diameter = min(screenWidth, screenHeight) * 0.07
+        let center = CGPoint(x: screenRect.minX + screenWidth * u, y: screenRect.maxY - screenHeight * v)
+        context.setFillColor(duoBlack)
+        context.fillEllipse(in: CGRect(x: center.x - diameter / 2, y: center.y - diameter / 2, width: diameter, height: diameter))
+    }
+    return context.makeImage()!
+}
+
+// MARK: - 사진 목업(반쯤 접힌 Duo)
+
+/// 흰 배경의 기기 사진 목업에 스크린샷을 끼운다.
+/// 바깥 흰 배경과 화면 자리(베젤 안쪽 흰 영역)를 찾아 투명하게 만들고, 스크린샷 위 절반은 위 판에,
+/// 아래 절반은 아래 판(앞이 넓은 사다리꼴)에 맞춰 붙인 뒤 목업 테두리를 덮는다. 결과는 기기 부분만 잘라 돌려준다.
+func mockupFold(screen: CGImage, mockupPath: String) -> CGImage {
+    let mockup = loadImage(URL(fileURLWithPath: mockupPath))
+    let w = mockup.width, h = mockup.height
+    var pixels = [UInt8](repeating: 0, count: w * h * 4)
+    let ctx = CGContext(data: &pixels, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.draw(mockup, in: CGRect(x: 0, y: 0, width: w, height: h))
+    // pixels는 위가 0인 행 순서
+
+    func isWhite(_ i: Int) -> Bool { pixels[i * 4] > 246 && pixels[i * 4 + 1] > 246 && pixels[i * 4 + 2] > 246 }
+    /// 시작점들에서 이어진 흰 영역을 찾는다.
+    func flood(_ seeds: [Int]) -> [Bool] {
+        var mark = [Bool](repeating: false, count: w * h)
+        var stack = seeds.filter { isWhite($0) }
+        for seed in stack { mark[seed] = true }
+        while let i = stack.popLast() {
+            let x = i % w, y = i / w
+            for (nx, ny) in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)] where nx >= 0 && ny >= 0 && nx < w && ny < h {
+                let n = ny * w + nx
+                if !mark[n] && isWhite(n) { mark[n] = true; stack.append(n) }
+            }
+        }
+        return mark
+    }
+    var border: [Int] = []
+    for x in 0..<w { border.append(x); border.append((h - 1) * w + x) }
+    for y in 0..<h { border.append(y * w); border.append(y * w + w - 1) }
+    let outside = flood(border)
+    let inside = flood([(h * 45 / 100) * w + w / 2])
+
+    // 화면 자리의 행별 좌우 끝
+    var rows: [(y: Int, minX: Int, maxX: Int)] = []
+    for y in 0..<h {
+        var minX = -1, maxX = -1
+        for x in 0..<w where inside[y * w + x] { if minX < 0 { minX = x }; maxX = x }
+        if minX >= 0 { rows.append((y, minX, maxX)) }
+    }
+    let top = rows.first!.y, bottom = rows.last!.y
+    let span = bottom - top
+    let ref = rows.first { $0.y >= top + span / 4 }!
+    // 접히는 자리: 왼쪽 끝이 바깥으로 벌어지기 시작하는 행
+    let foldRow = rows.first { $0.y > top + span / 3 && $0.minX < ref.minX - 2 }!
+    func row(at fraction: Double) -> (y: Int, minX: Int, maxX: Int) {
+        let target = foldRow.y + Int(Double(bottom - foldRow.y) * fraction)
+        return rows.first { $0.y >= target }!
+    }
+    let a = row(at: 0.3), b = row(at: 0.6)
+    func extrapolate(_ v1: Int, _ v2: Int, _ y1: Int, _ y2: Int, to y: Int) -> CGFloat {
+        CGFloat(v1) + CGFloat(v2 - v1) * CGFloat(y - y1) / CGFloat(y2 - y1)
+    }
+    let bottomLeft = extrapolate(a.minX, b.minX, a.y, b.y, to: bottom)
+    let bottomRight = extrapolate(a.maxX, b.maxX, a.y, b.y, to: bottom)
+    let foldLeft = extrapolate(a.minX, b.minX, a.y, b.y, to: foldRow.y)
+    let foldRight = extrapolate(a.maxX, b.maxX, a.y, b.y, to: foldRow.y)
+
+    // 바깥 배경과 화면 자리(가장자리 2픽셀 넓혀서)를 투명하게
+    var frame = pixels
+    for i in 0..<(w * h) where outside[i] { frame[i * 4] = 0; frame[i * 4 + 1] = 0; frame[i * 4 + 2] = 0; frame[i * 4 + 3] = 0 }
+    // 바깥 배경에 닿은 밝은 가장자리 픽셀(흰 배경 흔적)을 한 겹 지운다
+    for y in 1..<(h - 1) {
+        for x in 1..<(w - 1) where !outside[y * w + x] {
+            let i = y * w + x
+            guard outside[i - 1] || outside[i + 1] || outside[i - w] || outside[i + w] else { continue }
+            let light = min(pixels[i * 4], pixels[i * 4 + 1], pixels[i * 4 + 2])
+            if light > 215 { frame[i * 4] = 0; frame[i * 4 + 1] = 0; frame[i * 4 + 2] = 0; frame[i * 4 + 3] = 0 }
+        }
+    }
+    for y in 0..<h {
+        for x in 0..<w where inside[y * w + x] {
+            for dy in -2...2 { for dx in -2...2 {
+                let nx = x + dx, ny = y + dy
+                guard nx >= 0, ny >= 0, nx < w, ny < h else { continue }
+                let n = (ny * w + nx) * 4
+                // 흰색에 가까운 가장자리만 지운다(검은 베젤은 남긴다)
+                if frame[n] > 120 { frame[n] = 0; frame[n + 1] = 0; frame[n + 2] = 0; frame[n + 3] = 0 }
+            } }
+        }
+    }
+    let frameImage = frame.withUnsafeMutableBytes { buffer in
+        CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                  space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!.makeImage()!
+    }
+
+    // 스크린샷을 화면 자리에 붙인다(CoreImage 좌표는 아래가 0)
+    let H = CGFloat(h)
+    let shot = CIImage(cgImage: screen)
+    let sw = CGFloat(screen.width), sh = CGFloat(screen.height)
+    let topScreen = shot.cropped(to: CGRect(x: 0, y: sh / 2, width: sw, height: sh / 2))
+    let bottomScreen = shot.cropped(to: CGRect(x: 0, y: 0, width: sw, height: sh / 2))
+    func warp(_ image: CIImage, tl: CGPoint, tr: CGPoint, bl: CGPoint, br: CGPoint) -> CIImage {
+        let filter = CIFilter(name: "CIPerspectiveTransform")!
+        filter.setValue(image, forKey: kCIInputImageKey)
+        filter.setValue(CIVector(cgPoint: tl), forKey: "inputTopLeft")
+        filter.setValue(CIVector(cgPoint: tr), forKey: "inputTopRight")
+        filter.setValue(CIVector(cgPoint: bl), forKey: "inputBottomLeft")
+        filter.setValue(CIVector(cgPoint: br), forKey: "inputBottomRight")
+        return filter.outputImage!
+    }
+    let foldY = H - CGFloat(foldRow.y)
+    let upper = warp(topScreen, tl: CGPoint(x: CGFloat(ref.minX), y: H - CGFloat(top)), tr: CGPoint(x: CGFloat(ref.maxX), y: H - CGFloat(top)),
+                     bl: CGPoint(x: foldLeft, y: foldY - 4), br: CGPoint(x: foldRight, y: foldY - 4))  // 아래 판과 4픽셀 겹쳐 틈을 없앤다
+    let lower = warp(bottomScreen, tl: CGPoint(x: foldLeft, y: foldY), tr: CGPoint(x: foldRight, y: foldY),
+                     bl: CGPoint(x: bottomLeft, y: H - CGFloat(bottom)), br: CGPoint(x: bottomRight, y: H - CGFloat(bottom)))
+    let screens = CIContext().createCGImage(upper.composited(over: lower), from: CGRect(x: 0, y: 0, width: w, height: h))!
+
+    // 화면 자리 모양으로 자르고(둥근 모서리), 목업 테두리를 덮는다
+    var insideAlpha = [UInt8](repeating: 0, count: w * h)
+    for y in 0..<h { for x in 0..<w where inside[y * w + x] {
+        for dy in -3...3 { for dx in -3...3 {
+            let nx = x + dx, ny = y + dy
+            if nx >= 0, ny >= 0, nx < w, ny < h { insideAlpha[ny * w + nx] = 255 }
+        } }
+    } }
+    let maskImage = insideAlpha.withUnsafeMutableBytes { buffer in
+        CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)!.makeImage()!
+    }
+    let out = makeContext(width: w, height: h)
+    out.saveGState()
+    out.clip(to: CGRect(x: 0, y: 0, width: w, height: h), mask: maskImage)
+    out.interpolationQuality = .high
+    out.draw(screens, in: CGRect(x: 0, y: 0, width: w, height: h))
+    out.restoreGState()
+    out.draw(frameImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+    let composed = out.makeImage()!
+
+    // 기기 부분만 잘라 낸다
+    var minX = w, maxX = 0, minY = h, maxY = 0
+    for y in 0..<h { for x in 0..<w where !outside[y * w + x] {
+        minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+    } }
+    return composed.cropping(to: CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1))!
 }
 
 // MARK: - 합성
@@ -277,8 +624,21 @@ func compose(slide: Slide, rawFolder: URL, language: String) -> CGImage {
     for device in slide.devices {
         let screen = loadImage(rawFolder.appending(path: device.image))
         let deviceWidth = canvas.width * device.width
-        var image = renderDevice(screen: screen, style: style(for: device.kind), width: deviceWidth)
-        if device.kind == "duoFold" { image = foldDevice(image) }
+        var image: CGImage
+        switch device.kind {
+        case "duoOpen": image = renderDuo(screen: screen, closed: false, width: deviceWidth)
+        case "duoFold": image = foldDevice(renderDuo(screen: screen, closed: false, width: deviceWidth))
+        case "duoClosed": image = renderDuo(screen: screen, closed: true, width: deviceWidth)
+        case "mockupFold":
+            let photo = mockupFold(screen: screen, mockupPath: device.mockup!)
+            // 목업 사진을 원하는 폭으로 줄인다
+            let scale = deviceWidth / CGFloat(photo.width)
+            let resized = makeContext(width: Int(deviceWidth), height: Int(CGFloat(photo.height) * scale))
+            resized.interpolationQuality = .high
+            resized.draw(photo, in: CGRect(x: 0, y: 0, width: resized.width, height: resized.height))
+            image = resized.makeImage()!
+        default: image = renderDevice(screen: screen, style: style(for: device.kind), width: deviceWidth)
+        }
         let size = CGSize(width: image.width, height: image.height)
         let center = CGPoint(x: canvas.width * device.x, y: canvas.height * device.y + size.height / 2)
 

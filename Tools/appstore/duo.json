@@ -36,40 +36,34 @@
       },
       "devices": [
         {
-          "kind": "duoFold",
+          "kind": "mockupFold",
           "image": "duo/fold-draw.png",
+          "mockup": "docs/appstore-mockups/duo-fold.png",
           "x": 0.5,
-          "y": 0.26,
-          "width": 0.84
+          "y": 0.25,
+          "width": 0.86
         }
       ]
     },
     {
-      "output": "duo/03-postures.png",
+      "output": "duo/03-closed.png",
       "width": 2007,
       "height": 2853,
       "title": {
-        "ko": "접어도 펼쳐도\n[그리던 그림 그대로]",
-        "en": "Fold or unfold,\n[your sketch stays]"
+        "ko": "접은 채로도\n[바로 그려서 찾기]",
+        "en": "Folded shut?\n[Still draw and find]"
       },
       "subtitle": {
-        "ko": "바깥 화면에서도 바로 그려서 찾아요",
-        "en": "Draw and search on the cover screen too"
+        "ko": "바깥 화면에서도 똑같이 써요",
+        "en": "Works the same on the cover screen"
       },
       "devices": [
         {
-          "kind": "duoOpen",
-          "image": "duo/open-draw.png",
-          "x": 0.64,
-          "y": 0.27,
-          "width": 0.62
-        },
-        {
           "kind": "duoClosed",
           "image": "duo/closed-draw.png",
-          "x": 0.3,
-          "y": 0.4,
-          "width": 0.46
+          "x": 0.5,
+          "y": 0.25,
+          "width": 0.66
         }
       ]
     },
@@ -82,23 +76,23 @@
         "en": "Turn it sideways:\n[canvas meets Top 10]"
       },
       "subtitle": {
-        "ko": "결과를 보며 바로 다시 그려요",
-        "en": "Redraw while you compare"
+        "ko": "펼쳐도 접어도 가로 배치 그대로",
+        "en": "Open or closed, the layout follows"
       },
       "devices": [
         {
           "kind": "duoOpen",
           "image": "duo/open-land-draw.png",
-          "x": 0.44,
-          "y": 0.245,
-          "width": 0.8
+          "x": 0.5,
+          "y": 0.235,
+          "width": 0.92
         },
         {
-          "kind": "duoOpen",
-          "image": "duo/open-land-detail.png",
-          "x": 0.56,
+          "kind": "duoClosed",
+          "image": "duo/closed-land-draw.png",
+          "x": 0.5,
           "y": 0.6,
-          "width": 0.8
+          "width": 0.7
         }
       ]
     },

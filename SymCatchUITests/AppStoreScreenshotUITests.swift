@@ -14,7 +14,7 @@ import XCTest
 /// 환경 변수(xcodebuild에 `TEST_RUNNER_` 접두로 넘긴다)
 /// - `SHOT_LANG`: `ko`(기본) 또는 `en`
 /// - `SHOT_SCENES`: 찍을 장면, 쉼표로 구분(기본 전체). draw, top10, celebration, detail, collection, recent, search
-/// - `SHOT_ORIENTATION`: `portrait`(기본) 또는 `landscape`
+/// - `SHOT_ORIENTATION`: `portrait`(기본), `landscape`, `keep`(기기 방향 그대로)
 final class AppStoreScreenshotUITests: XCTestCase {
     private let environment = ProcessInfo.processInfo.environment
     private var isEnglish: Bool { environment["SHOT_LANG"] == "en" }
@@ -30,7 +30,12 @@ final class AppStoreScreenshotUITests: XCTestCase {
 
     @MainActor
     func test_appStoreScreenshots() throws {
-        XCUIDevice.shared.orientation = environment["SHOT_ORIENTATION"] == "landscape" ? .landscapeLeft : .portrait
+        // keep: 기기(시뮬레이터)에서 돌려 둔 방향을 그대로 쓴다(Duo 바깥 화면 가로 등).
+        switch environment["SHOT_ORIENTATION"] {
+        case "landscape": XCUIDevice.shared.orientation = .landscapeLeft
+        case "keep": break
+        default: XCUIDevice.shared.orientation = .portrait
+        }
         let app = XCUIApplication()
         app.launchArguments += ["-ScreenshotDemo"]
         app.launchArguments += isEnglish ? ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
