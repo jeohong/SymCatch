@@ -27,6 +27,19 @@ struct Slide: Decodable {
     let title: [String: String]
     let subtitle: [String: String]?
     let devices: [Device]
+    /// 문구 위치를 직접 정할 때(헤더·검색 결과 같은 가로 배너). 없으면 위 가운데.
+    let text: TextLayout?
+}
+
+struct TextLayout: Decodable {
+    /// 문구 상자 왼쪽 x, 위쪽 y, 폭(모두 캔버스 비율)
+    let x: Double
+    let y: Double
+    let width: Double
+    /// left | center(기본)
+    let align: String?
+    /// 제목 글자 크기(캔버스 높이 비율)
+    let size: Double
 }
 
 struct Device: Decodable {
@@ -95,9 +108,9 @@ func drawBackground(_ context: CGContext, size: CGSize) {
 }
 
 /// "[강조]" 표기를 강조색으로 바꾼 문자열
-func styled(_ text: String, font: NSFont, color: NSColor, lineHeight: CGFloat) -> NSAttributedString {
+func styled(_ text: String, font: NSFont, color: NSColor, lineHeight: CGFloat, alignment: NSTextAlignment = .center) -> NSAttributedString {
     let paragraph = NSMutableParagraphStyle()
-    paragraph.alignment = .center
+    paragraph.alignment = alignment
     paragraph.minimumLineHeight = font.pointSize * lineHeight
     paragraph.maximumLineHeight = font.pointSize * lineHeight
     paragraph.lineBreakStrategy = .hangulWordPriority
@@ -119,10 +132,10 @@ func styled(_ text: String, font: NSFont, color: NSColor, lineHeight: CGFloat) -
 }
 
 /// 문구를 위가 0인 좌표의 `top`부터 그리고, 그린 높이를 돌려준다.
-func drawText(_ text: NSAttributedString, in context: CGContext, canvas: CGSize, top: CGFloat, width: CGFloat) -> CGFloat {
+func drawText(_ text: NSAttributedString, in context: CGContext, canvas: CGSize, top: CGFloat, width: CGFloat, left: CGFloat? = nil) -> CGFloat {
     let bounds = text.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude),
                                    options: [.usesLineFragmentOrigin, .usesFontLeading])
-    let rect = CGRect(x: (canvas.width - width) / 2, y: top, width: width, height: ceil(bounds.height))
+    let rect = CGRect(x: left ?? (canvas.width - width) / 2, y: top, width: width, height: ceil(bounds.height))
     NSGraphicsContext.saveGraphicsState()
     let graphics = NSGraphicsContext(cgContext: context, flipped: true)
     NSGraphicsContext.current = graphics
@@ -608,17 +621,22 @@ func compose(slide: Slide, rawFolder: URL, language: String) -> CGImage {
     drawBackground(context, size: canvas)
 
     let isLandscape = canvas.width > canvas.height
-    let titleSize = (isLandscape ? canvas.height : canvas.width) * (isLandscape ? 0.07 : 0.078)
+    let layout = slide.text
+    let titleSize: CGFloat = layout.map { canvas.height * CGFloat($0.size) }
+        ?? (isLandscape ? canvas.height : canvas.width) * (isLandscape ? 0.07 : 0.078)
     let titleFont = NSFont.systemFont(ofSize: titleSize, weight: .heavy)
     let subtitleFont = NSFont.systemFont(ofSize: titleSize * 0.46, weight: .medium)
-    let textWidth = canvas.width * (isLandscape ? 0.7 : 0.86)
-    var top = canvas.height * (isLandscape ? 0.06 : 0.055)
+    let textWidth: CGFloat = layout.map { canvas.width * CGFloat($0.width) } ?? canvas.width * (isLandscape ? 0.7 : 0.86)
+    let textLeft: CGFloat? = layout.map { canvas.width * CGFloat($0.x) }
+    let alignment: NSTextAlignment = layout?.align == "left" ? .left : .center
+    var top: CGFloat = layout.map { canvas.height * CGFloat($0.y) } ?? canvas.height * (isLandscape ? 0.06 : 0.055)
     let title = slide.title[language] ?? slide.title["ko"]!
-    top += drawText(styled(title, font: titleFont, color: .white, lineHeight: 1.15), in: context, canvas: canvas, top: top, width: textWidth)
+    top += drawText(styled(title, font: titleFont, color: .white, lineHeight: 1.15, alignment: alignment),
+                    in: context, canvas: canvas, top: top, width: textWidth, left: textLeft)
     if let subtitle = slide.subtitle?[language] ?? slide.subtitle?["ko"] {
         top += titleSize * 0.35
-        _ = drawText(styled(subtitle, font: subtitleFont, color: NSColor.white.withAlphaComponent(0.86), lineHeight: 1.3),
-                     in: context, canvas: canvas, top: top, width: textWidth)
+        _ = drawText(styled(subtitle, font: subtitleFont, color: NSColor.white.withAlphaComponent(0.86), lineHeight: 1.3, alignment: alignment),
+                     in: context, canvas: canvas, top: top, width: textWidth, left: textLeft)
     }
 
     for device in slide.devices {

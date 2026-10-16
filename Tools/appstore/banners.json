@@ -1,0 +1,79 @@
+{
+  "slides": [
+    {
+      "output": "banners/header-3840x1646.png",
+      "width": 3840,
+      "height": 1646,
+      "title": {
+        "ko": "그리면, [찾아요]",
+        "en": "Draw it. [Find it.]"
+      },
+      "text": {
+        "x": 0.2,
+        "y": 0.09,
+        "width": 0.6,
+        "align": "center",
+        "size": 0.1
+      },
+      "devices": [
+        {
+          "kind": "ipad",
+          "image": "ipad/draw.png",
+          "x": 0.5,
+          "y": 0.28,
+          "width": 0.38
+        },
+        {
+          "kind": "phone",
+          "image": "iphone/draw.png",
+          "x": 0.285,
+          "y": 0.355,
+          "width": 0.115
+        },
+        {
+          "kind": "phone",
+          "image": "iphone/top10.png",
+          "x": 0.715,
+          "y": 0.355,
+          "width": 0.115
+        }
+      ]
+    },
+    {
+      "output": "banners/search-3840x2560.png",
+      "width": 3840,
+      "height": 2560,
+      "title": {
+        "ko": "이름 몰라도\n[그리면 찾아요]",
+        "en": "Forgot the name?\n[Just draw it]"
+      },
+      "subtitle": {
+        "ko": "대충 그린 모양으로 심볼 이름과 코드를 바로 찾아요",
+        "en": "Sketch a shape, get its name and code"
+      },
+      "text": {
+        "x": 0.07,
+        "y": 0.32,
+        "width": 0.42,
+        "align": "left",
+        "size": 0.068
+      },
+      "devices": [
+        {
+          "kind": "phone",
+          "image": "iphone/draw.png",
+          "x": 0.625,
+          "y": 0.09,
+          "width": 0.22
+        },
+        {
+          "kind": "phone",
+          "image": "iphone/detail.png",
+          "x": 0.855,
+          "y": 0.16,
+          "width": 0.22
+        }
+      ]
+    }
+  ]
+}
