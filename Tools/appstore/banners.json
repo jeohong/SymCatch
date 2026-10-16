@@ -31,11 +31,11 @@
           "width": 0.115
         },
         {
-          "kind": "phone",
-          "image": "iphone/top10.png",
-          "x": 0.715,
-          "y": 0.355,
-          "width": 0.115
+          "kind": "duoClosed",
+          "image": "duo/closed-draw.png",
+          "x": 0.735,
+          "y": 0.375,
+          "width": 0.152
         }
       ]
     },
