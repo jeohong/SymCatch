@@ -1,0 +1,40 @@
+{
+  "slides": [
+    {
+      "output": "iphone/01-draw.png", "width": 1206, "height": 2622,
+      "title": { "ko": "이름이 기억 안 나도\n[그리면 찾아요]", "en": "Can't recall the name?\n[Just draw it]" },
+      "subtitle": { "ko": "대충 그린 그림으로 SF Symbol Top 10", "en": "Sketch a shape, get the Top 10 SF Symbols" },
+      "devices": [{ "kind": "phone", "image": "iphone/draw.png", "x": 0.5, "y": 0.235, "width": 0.84 }]
+    },
+    {
+      "output": "iphone/02-detail.png", "width": 1206, "height": 2622,
+      "title": { "ko": "이름도 코드도\n[탭 한 번에 복사]", "en": "Copy the name\n[or the code]" },
+      "subtitle": { "ko": "SwiftUI·UIKit 코드와 렌더링 모드까지", "en": "SwiftUI and UIKit snippets, rendering modes" },
+      "devices": [{ "kind": "phone", "image": "iphone/detail.png", "x": 0.5, "y": 0.235, "width": 0.84 }]
+    },
+    {
+      "output": "iphone/03-badge.png", "width": 1206, "height": 2622,
+      "title": { "ko": "85% 넘게 그리면\n[뱃지 획득]", "en": "Score 85% or more\nto [earn a badge]" },
+      "subtitle": { "ko": "브론즈부터 레전더리까지 등급을 올려 보세요", "en": "Climb from Bronze all the way to Legendary" },
+      "devices": [{ "kind": "phone", "image": "iphone/celebration.png", "x": 0.5, "y": 0.235, "width": 0.84 }]
+    },
+    {
+      "output": "iphone/04-collection.png", "width": 1206, "height": 2622,
+      "title": { "ko": "모을수록 재밌는\n[업적 62개]", "en": "[62 achievements]\nto collect" },
+      "subtitle": { "ko": "연속 출석과 카테고리별 수집 현황", "en": "Daily streaks and progress for every category" },
+      "devices": [{ "kind": "phone", "image": "iphone/collection.png", "x": 0.5, "y": 0.235, "width": 0.84 }]
+    },
+    {
+      "output": "iphone/05-search.png", "width": 1206, "height": 2622,
+      "title": { "ko": "글자로도 찾아요\n[하트, heart]", "en": "Or search\n[by name]" },
+      "subtitle": { "ko": "한국어·영어 이름과 27개 카테고리", "en": "Keywords and 27 categories to browse" },
+      "devices": [{ "kind": "phone", "image": "iphone/search.png", "x": 0.5, "y": 0.235, "width": 0.84 }]
+    },
+    {
+      "output": "iphone/06-recent.png", "width": 1206, "height": 2622,
+      "title": { "ko": "내가 그린 그림까지\n[기기에만 저장]", "en": "Your sketches,\n[kept on device]" },
+      "subtitle": { "ko": "로그인도 인터넷 연결도 필요 없어요", "en": "No sign-in, no internet connection needed" },
+      "devices": [{ "kind": "phone", "image": "iphone/recent.png", "x": 0.5, "y": 0.235, "width": 0.84 }]
+    }
+  ]
+}
