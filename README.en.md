@@ -1,4 +1,6 @@
-# SymCatch
+<p align="center"><img src=".github/icon.png" width="128" alt="SymCatch app icon"></p>
+
+<h1 align="center">SymCatch</h1>
 
 [한국어](README.md) | **English**
 
@@ -8,12 +10,10 @@ Can't remember an icon's name? Sketch it on the canvas. SymCatch compares your d
 All recognition and storage happen on the device. The app contains no networking code.
 
 <p align="center">
-  <img src=".github/screenshots/iphone-draw.png" width="220" alt="Draw screen">
-  <img src=".github/screenshots/iphone-search.png" width="220" alt="Search screen">
-  <img src=".github/screenshots/iphone-detail.png" width="220" alt="Symbol detail screen">
+  <img src=".github/screenshots/en/iphone-draw.png" width="220" alt="Draw screen">
+  <img src=".github/screenshots/en/iphone-detail.png" width="220" alt="Symbol detail screen">
+  <img src=".github/screenshots/en/iphone-celebration.png" width="220" alt="Badge earned">
 </p>
-
-> Screenshots show the app in Korean. The app also ships in English.
 
 ## Contents
 
@@ -104,10 +104,15 @@ Tools/check_layers.sh
 ## How to use
 
 <p align="center">
-  <img src=".github/screenshots/iphone-onboarding.png" width="200" alt="Welcome screen">
-  <img src=".github/screenshots/iphone-draw.png" width="200" alt="Draw screen">
-  <img src=".github/screenshots/iphone-search.png" width="200" alt="Text search">
-  <img src=".github/screenshots/iphone-detail.png" width="200" alt="Symbol detail">
+  <img src=".github/screenshots/en/iphone-draw.png" width="200" alt="Draw">
+  <img src=".github/screenshots/en/iphone-top10.png" width="200" alt="Top 10 results">
+  <img src=".github/screenshots/en/iphone-celebration.png" width="200" alt="Badge earned">
+</p>
+
+<p align="center">
+  <img src=".github/screenshots/en/iphone-collection.png" width="200" alt="Collection">
+  <img src=".github/screenshots/en/iphone-search.png" width="200" alt="Text search">
+  <img src=".github/screenshots/en/iphone-recent.png" width="200" alt="Recently found">
 </p>
 
 1. **First launch** — Practice by drawing a heart on the welcome screen while the symbol index is prepared.
@@ -117,9 +122,22 @@ Tools/check_layers.sh
 5. **Search by text** — If you vaguely remember the name, search on the Search tab, for example `heart`.
 6. **Collect** — Check badges, achievements and your streak on the Collection tab.
 
+### On every device
+
+The same screens rearrange to fit the window size and device pose.
+
 <p align="center">
-  <img src=".github/screenshots/ipad-draw.png" width="680" alt="iPad landscape draw screen">
+  <img src=".github/screenshots/en/ipad-draw.png" width="680" alt="iPad landscape: canvas left, Top 10 right">
 </p>
+
+<p align="center">
+  <img src=".github/screenshots/en/duo-fold.png" width="300" alt="iPhone Duo half-folded: results on top, canvas below">
+  <img src=".github/screenshots/en/duo-closed.png" width="240" alt="iPhone Duo closed: cover screen">
+</p>
+
+<p align="center"><sub>iPad landscape · iPhone Duo half-folded (results up / canvas down) · iPhone Duo closed (cover screen)</sub></p>
+
+> Screenshots were taken in the simulator with the DEBUG-only demo mode (`-ScreenshotDemo`). Recognition results are meaningless in the simulator, so the demo mode fills in results and history similar to drawing a heart on a real device.
 
 ## Architecture
 
@@ -209,7 +227,7 @@ A model-free outline distance (Chamfer) method also remains in the Recognition m
 ```
 SymCatch/
 ├── SymCatch/                      App target (App + Presentation)
-│   ├── App/                       Entry point, AppContainer (DI), AppRouter, tabs
+│   ├── App/                       Entry point, AppContainer (DI), AppRouter, tabs, (DEBUG) screenshot demo mode
 │   ├── Presentation/
 │   │   ├── Draw/                  Draw screen, layouts (iPhone, iPad, Duo), result sheet
 │   │   ├── SymbolDetail/          Symbol detail
@@ -230,7 +248,7 @@ SymCatch/
 │   └── Tests/                     DomainTests · StorageTests · RecognitionTests
 ├── SymCatchTests/                 ViewModel and layout tests (fake UseCases injected)
 ├── SymCatchUITests/               UI tests for the main flows
-└── Tools/                         Symbol extraction, layer check, keyword check scripts
+└── Tools/                         Symbol extraction, layer and keyword checks, App Store images, app icon
 ```
 
 ### Tools
@@ -240,6 +258,9 @@ SymCatch/
 | `Tools/extract_symbols.swift` | Reads symbol names, categories and minimum OS from the installed SF Symbols app and writes `symbols.json`. Run it after updating the SF Symbols app. |
 | `Tools/check_layers.sh` | Checks that Presentation doesn't import Storage, Recognition, SwiftData or Vision. |
 | `Tools/check_korean_keywords.swift` | Checks that the Korean keyword dictionary matches the catalog. |
+| `Tools/appstore/capture.sh` | Runs the demo-mode UI test (`AppStoreScreenshotUITests`) and captures the simulator screen for each scene. |
+| `Tools/appstore/compose.swift` | Adds background, device frames and captions to the captures to make App Store screenshots, the header and the search result image. Scenes and captions live in `iphone.json`, `ipad.json`, `duo.json` and `banners.json`. |
+| `Tools/appicon/make_icon.swift` | Draws the app icon (light, dark and tinted, 1024×1024). |
 
 ## Tests
 
@@ -251,7 +272,7 @@ SymCatch/
 | SymCatchTests | Swift Testing | ViewModel state changes, `DrawLayoutResolver` layout choice |
 | SymCatchUITests | XCTest | Draw → result → copy, badges, recent, search, settings, rotation, accessibility |
 
-About 280 unit tests and 26 UI tests.
+About 280 unit tests and 25 UI tests.
 
 ## Privacy
 

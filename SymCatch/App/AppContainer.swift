@@ -68,7 +68,7 @@ final class AppContainer {
     private static func makeProgressContainer(url: URL) -> ModelContainer {
         do {
             #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains(uiTestingInMemoryArgument) {
+            if ProcessInfo.processInfo.arguments.contains(uiTestingInMemoryArgument) || ScreenshotDemo.isOn {
                 return try ProgressModelContainerFactory.inMemory()
             }
             #endif
@@ -98,7 +98,7 @@ final class AppContainer {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains(uiTestingShowOnboardingArgument) { return true }
-        if arguments.contains(uiTestingSkipOnboardingArgument) { return false }
+        if arguments.contains(uiTestingSkipOnboardingArgument) || ScreenshotDemo.isOn { return false }
         #endif
         return nil
     }
@@ -117,6 +117,12 @@ final class AppContainer {
     /// 앱을 켤 때 한 번: 기준이 바뀌기 전에 받은 기록을 지금 규칙에 맞춘다.
     /// 1) 뱃지 등급을 최고 유사도에 맞춘다(올리기만). 2) 늘어난 업적을 지금 뱃지·통계로 다시 계산한다(조용히 달성).
     func reconcileProgress() async {
+        #if DEBUG
+        if ScreenshotDemo.isOn {
+            await ScreenshotDemo.seed(records: records, badges: badges, stats: stats)
+            drawViewModel.loadDemoSketch(ScreenshotDemo.heartSketch)
+        }
+        #endif
         _ = try? await DefaultReconcileBadgeTiersUseCase(badges: badges).execute(now: .now)
         _ = try? await DefaultReconcileAchievementsUseCase(achievements: achievements, badges: badges, stats: stats,
                                                            catalog: symbolCatalog).execute(now: .now)
@@ -128,7 +134,7 @@ final class AppContainer {
     /// 그리기·온보딩이 쓰는 준비와 검색. UI 테스트는 실행 인자로 오류·느린 준비·느린 검색을 만든다.
     private var drawPrepare: any PrepareSymbolIndexUseCase {
         #if DEBUG
-        UITestingStates.prepare(appEngine.prepare)
+        ScreenshotDemo.isOn ? ScreenshotDemo.Prepare() : UITestingStates.prepare(appEngine.prepare)
         #else
         appEngine.prepare
         #endif
@@ -136,7 +142,7 @@ final class AppContainer {
 
     private var drawSearch: any SearchSymbolsUseCase {
         #if DEBUG
-        UITestingStates.search(appEngine.search)
+        ScreenshotDemo.isOn ? ScreenshotDemo.Search() : UITestingStates.search(appEngine.search)
         #else
         appEngine.search
         #endif

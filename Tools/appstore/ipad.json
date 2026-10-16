@@ -1,0 +1,114 @@
+{
+  "slides": [
+    {
+      "output": "ipad/01-draw.png",
+      "width": 2752,
+      "height": 2064,
+      "title": {
+        "ko": "넓은 화면에서\n[그리고 바로 비교]",
+        "en": "Draw big,\n[compare at a glance]"
+      },
+      "subtitle": {
+        "ko": "캔버스 옆에 Top 10이 늘 보여요 · Apple Pencil 지원",
+        "en": "Top 10 beside the canvas · Apple Pencil ready"
+      },
+      "devices": [
+        {
+          "kind": "ipad",
+          "image": "ipad/draw.png",
+          "x": 0.5,
+          "y": 0.3,
+          "width": 0.74
+        }
+      ]
+    },
+    {
+      "output": "ipad/02-detail.png",
+      "width": 2752,
+      "height": 2064,
+      "title": {
+        "ko": "이름도 코드도\n[탭 한 번에 복사]",
+        "en": "Copy the name\n[or the code]"
+      },
+      "subtitle": {
+        "ko": "SwiftUI·UIKit 코드와 렌더링 모드까지",
+        "en": "SwiftUI and UIKit snippets, rendering modes"
+      },
+      "devices": [
+        {
+          "kind": "ipad",
+          "image": "ipad/detail.png",
+          "x": 0.5,
+          "y": 0.3,
+          "width": 0.74
+        }
+      ]
+    },
+    {
+      "output": "ipad/03-badge.png",
+      "width": 2752,
+      "height": 2064,
+      "title": {
+        "ko": "85% 넘게 그리면\n[뱃지 획득]",
+        "en": "Score 85% or more\nto [earn a badge]"
+      },
+      "subtitle": {
+        "ko": "브론즈부터 레전더리까지 등급을 올려 보세요",
+        "en": "Climb from Bronze all the way to Legendary"
+      },
+      "devices": [
+        {
+          "kind": "ipad",
+          "image": "ipad/celebration.png",
+          "x": 0.5,
+          "y": 0.3,
+          "width": 0.74
+        }
+      ]
+    },
+    {
+      "output": "ipad/04-collection.png",
+      "width": 2752,
+      "height": 2064,
+      "title": {
+        "ko": "모을수록 재밌는\n[업적 62개]",
+        "en": "[62 achievements]\nto collect"
+      },
+      "subtitle": {
+        "ko": "연속 출석과 카테고리별 수집 현황",
+        "en": "Daily streaks and progress for every category"
+      },
+      "devices": [
+        {
+          "kind": "ipad",
+          "image": "ipad/collection.png",
+          "x": 0.5,
+          "y": 0.3,
+          "width": 0.74
+        }
+      ]
+    },
+    {
+      "output": "ipad/05-recent.png",
+      "width": 2752,
+      "height": 2064,
+      "title": {
+        "ko": "내가 그린 그림까지\n[기기에만 저장]",
+        "en": "Your sketches,\n[kept on device]"
+      },
+      "subtitle": {
+        "ko": "로그인도 인터넷 연결도 필요 없어요",
+        "en": "No sign-in, no internet connection needed"
+      },
+      "devices": [
+        {
+          "kind": "ipad",
+          "image": "ipad/recent.png",
+          "x": 0.5,
+          "y": 0.3,
+          "width": 0.74
+        }
+      ]
+    }
+  ]
+}

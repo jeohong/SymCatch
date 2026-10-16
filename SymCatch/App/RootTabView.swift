@@ -242,11 +242,14 @@ struct RootTabView: View {
         CollectionScreen(viewModel: collectionViewModel, selectedBadgeName: selectedBadgeName)
             #if DEBUG
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        DeveloperMenu(container: container)
-                    } label: {
-                        Label("개발 도구", systemImage: "hammer")
+                // 스크린샷 데모에서는 개발 도구를 숨긴다.
+                if !ScreenshotDemo.isOn {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            DeveloperMenu(container: container)
+                        } label: {
+                            Label("개발 도구", systemImage: "hammer")
+                        }
                     }
                 }
             }

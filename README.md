@@ -1,4 +1,6 @@
-# SymCatch (심캐치)
+<p align="center"><img src=".github/icon.png" width="128" alt="SymCatch 앱 아이콘"></p>
+
+<h1 align="center">SymCatch (심캐치)</h1>
 
 **한국어** | [English](README.en.md)
 
@@ -8,9 +10,9 @@
 모든 인식과 저장은 기기 안에서만 이루어지며, 앱에는 네트워크 코드가 없습니다.
 
 <p align="center">
-  <img src=".github/screenshots/iphone-draw.png" width="220" alt="그리기 화면">
-  <img src=".github/screenshots/iphone-search.png" width="220" alt="검색 화면">
-  <img src=".github/screenshots/iphone-detail.png" width="220" alt="심볼 상세 화면">
+  <img src=".github/screenshots/ko/iphone-draw.png" width="220" alt="그리기 화면">
+  <img src=".github/screenshots/ko/iphone-detail.png" width="220" alt="심볼 상세 화면">
+  <img src=".github/screenshots/ko/iphone-celebration.png" width="220" alt="뱃지 획득">
 </p>
 
 ## 목차
@@ -102,10 +104,15 @@ Tools/check_layers.sh
 ## 사용법
 
 <p align="center">
-  <img src=".github/screenshots/iphone-onboarding.png" width="200" alt="시작 화면">
-  <img src=".github/screenshots/iphone-draw.png" width="200" alt="그리기 화면">
-  <img src=".github/screenshots/iphone-search.png" width="200" alt="글자 검색">
-  <img src=".github/screenshots/iphone-detail.png" width="200" alt="심볼 상세">
+  <img src=".github/screenshots/ko/iphone-draw.png" width="200" alt="그리기">
+  <img src=".github/screenshots/ko/iphone-top10.png" width="200" alt="Top 10 결과">
+  <img src=".github/screenshots/ko/iphone-celebration.png" width="200" alt="뱃지 획득">
+</p>
+
+<p align="center">
+  <img src=".github/screenshots/ko/iphone-collection.png" width="200" alt="콜렉션">
+  <img src=".github/screenshots/ko/iphone-search.png" width="200" alt="글자 검색">
+  <img src=".github/screenshots/ko/iphone-recent.png" width="200" alt="최근 찾은 심볼">
 </p>
 
 1. **처음 실행** — 시작 화면에서 연습으로 하트를 그려 보고, 그동안 심볼 인덱스를 준비합니다.
@@ -115,9 +122,22 @@ Tools/check_layers.sh
 5. **글자로 찾기** — 이름이 어렴풋이 떠오르면 검색 탭에서 `heart`나 `하트`처럼 찾습니다.
 6. **모으기** — 콜렉션 탭에서 뱃지, 업적, 연속 출석을 확인합니다.
 
+### 기기별 화면
+
+같은 화면이 창 크기와 기기 자세에 맞춰 배치를 바꿉니다.
+
 <p align="center">
-  <img src=".github/screenshots/ipad-draw.png" width="680" alt="iPad 가로 그리기 화면">
+  <img src=".github/screenshots/ko/ipad-draw.png" width="680" alt="iPad 가로: 왼쪽 캔버스, 오른쪽 Top 10">
 </p>
+
+<p align="center">
+  <img src=".github/screenshots/ko/duo-fold.png" width="300" alt="iPhone Duo 반쯤 접힘: 위 결과, 아래 캔버스">
+  <img src=".github/screenshots/ko/duo-closed.png" width="240" alt="iPhone Duo 닫힘: 바깥 화면">
+</p>
+
+<p align="center"><sub>iPad 가로 · iPhone Duo 반쯤 접힘(위 결과 / 아래 캔버스) · iPhone Duo 닫힘(바깥 화면)</sub></p>
+
+> 스크린샷은 시뮬레이터에서 DEBUG 전용 데모 모드(`-ScreenshotDemo`)로 찍었습니다. 시뮬레이터에서는 인식 결과가 의미 없게 나오므로, 데모 모드가 실기기에서 하트를 그렸을 때와 비슷한 결과와 기록을 채워 보여 줍니다.
 
 ## 아키텍처
 
@@ -207,7 +227,7 @@ flowchart LR
 ```
 SymCatch/
 ├── SymCatch/                      앱 타깃 (App + Presentation)
-│   ├── App/                       진입점, AppContainer(DI), AppRouter, 탭
+│   ├── App/                       진입점, AppContainer(DI), AppRouter, 탭, (DEBUG) 스크린샷 데모 모드
 │   ├── Presentation/
 │   │   ├── Draw/                  그리기 화면, 레이아웃(iPhone·iPad·Duo), 결과 시트
 │   │   ├── SymbolDetail/          심볼 상세
@@ -228,7 +248,7 @@ SymCatch/
 │   └── Tests/                     DomainTests · StorageTests · RecognitionTests
 ├── SymCatchTests/                 ViewModel·레이아웃 테스트 (가짜 UseCase 주입)
 ├── SymCatchUITests/               핵심 흐름 UI 테스트
-└── Tools/                         심볼 목록 추출, 레이어 검사, 키워드 검사 스크립트
+└── Tools/                         심볼 목록 추출, 레이어·키워드 검사, App Store 이미지·앱 아이콘 생성
 ```
 
 ### Tools
@@ -238,6 +258,9 @@ SymCatch/
 | `Tools/extract_symbols.swift` | 설치된 SF Symbols 앱에서 심볼 이름·카테고리·최소 OS를 읽어 `symbols.json`을 만듭니다. SF Symbols 앱을 업데이트한 뒤 실행합니다. |
 | `Tools/check_layers.sh` | Presentation이 Storage·Recognition·SwiftData·Vision을 import하지 않는지 검사합니다. |
 | `Tools/check_korean_keywords.swift` | 한국어 키워드 사전이 카탈로그와 맞는지 검사합니다. |
+| `Tools/appstore/capture.sh` | 데모 모드 UI 테스트(`AppStoreScreenshotUITests`)를 돌리며 시뮬레이터 화면을 장면별로 찍습니다. |
+| `Tools/appstore/compose.swift` | 찍은 화면에 배경·기기 테두리·문구를 입혀 App Store 스크린샷, 헤더, 검색 결과 이미지를 만듭니다. 장면과 문구는 `iphone.json`·`ipad.json`·`duo.json`·`banners.json`에 있습니다. |
+| `Tools/appicon/make_icon.swift` | 앱 아이콘(라이트·다크·틴트, 1024×1024)을 그립니다. |
 
 ## 테스트
 
@@ -249,7 +272,7 @@ SymCatch/
 | SymCatchTests | Swift Testing | ViewModel 상태 변화, `DrawLayoutResolver` 배치 선택 |
 | SymCatchUITests | XCTest | 그리기 → 결과 → 복사, 뱃지, 최근, 검색, 설정, 회전, 접근성 |
 
-단위 테스트 약 280개, UI 테스트 약 26개입니다.
+단위 테스트 약 280개, UI 테스트 25개입니다.
 
 ## 개인정보
 

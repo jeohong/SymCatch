@@ -37,6 +37,32 @@ final class SketchCanvasController {
         refresh()
     }
 
+    #if DEBUG
+    /// 스크린샷 데모: 정규화된 그림을 캔버스에 그린다. 사용자 획이 아니므로 검색을 다시 부르지 않는다.
+    func load(_ sketch: Sketch) {
+        let currentWidth = canvasView?.bounds.width ?? 0
+        // 캔버스 폭이 아직 없으면 임시 폭으로 만들고, 폭이 정해질 때 `canvasDidResize`가 맞춘다.
+        let width = currentWidth > 0 ? currentWidth : 1000
+        let ink = PKInk(.monoline, color: .canvasInkForPencilKit)
+        let lineWidth = max(3.5, width * 0.017)
+        let strokes = sketch.strokes.map { points in
+            let strokePoints = points.enumerated().map { index, point in
+                PKStrokePoint(location: CGPoint(x: point.x * width, y: point.y * width), timeOffset: Double(index) * 0.01,
+                              size: CGSize(width: lineWidth, height: lineWidth), opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2)
+            }
+            return PKStroke(ink: ink, path: PKStrokePath(controlPoints: strokePoints, creationDate: .now))
+        }
+        drawing = PKDrawing(strokes: strokes)
+        drawingWidth = width
+        if let canvasView, currentWidth > 0 {
+            isRestoring = true
+            canvasView.drawing = drawing
+            isRestoring = false
+        }
+        refresh()
+    }
+    #endif
+
     func select(_ tool: Tool) {
         self.tool = tool
         canvasView?.tool = Self.makeTool(tool, canvasWidth: canvasView?.bounds.width ?? 0)
