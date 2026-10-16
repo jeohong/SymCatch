@@ -61,6 +61,11 @@ struct DrawScreen: View {
             canvas.clear()
             canvas.select(.pen)
         }
+        #if DEBUG
+        .onChange(of: viewModel.demoSketch, initial: true) { _, sketch in
+            if let sketch { canvas.load(sketch) }
+        }
+        #endif
     }
 
     /// 위 최근 · 캔버스 · 도구 바 · 하단 결과 시트(일반 iPhone, Duo 닫힘·펼침)

@@ -210,6 +210,18 @@ final class DrawViewModel {
         }
     }
 
+    #if DEBUG
+    /// 스크린샷 데모: 캔버스에 미리 그려 둘 그림. 값이 바뀌면 화면이 캔버스에 그린다.
+    private(set) var demoSketch: Sketch?
+
+    /// 스크린샷 데모: 그림을 캔버스에 올리고 바로 찾는다.
+    func loadDemoSketch(_ sketch: Sketch) {
+        demoSketch = sketch
+        self.sketch = sketch
+        scheduleSearch(after: .zero)
+    }
+    #endif
+
     // MARK: - 최근 기록·뱃지
 
     /// 화면이 보일 때마다: 다른 탭에서 기록을 지웠을 수 있으므로 다시 읽는다.
